@@ -1,10 +1,102 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X, Send, Bot } from 'lucide-react'
+import { assistantChat } from '../api/assistant'
 
 export function ChatBubble() {
     const [isOpen, setIsOpen] = useState(false)
+
     const [message, setMessage] = useState('')
+    const [sending, setSending] = useState(false)
+    const [messages, setMessages] = useState([
+        {
+            id: 1,
+            type: 'bot',
+            message:
+                "Hi there! I'm Libby. Need help finding a book or booking a study room?",
+            timestamp: new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
+        },
+    ])
+
+    const listRef = useRef(null)
+
+    useEffect(() => {
+        if (!isOpen) return
+        const el = listRef.current
+        if (!el) return
+        el.scrollTop = el.scrollHeight
+    }, [isOpen, messages.length])
+
+    const sendMessage = async () => {
+        const content = String(message || '').trim()
+        if (!content || sending) return
+
+        const token = localStorage.getItem('token')
+        if (!token) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: Date.now(),
+                    type: 'bot',
+                    message: 'Please log in first so I can access your library data.',
+                    timestamp: new Date().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                },
+            ])
+            return
+        }
+
+        const userMsg = {
+            id: Date.now(),
+            type: 'user',
+            message: content,
+            timestamp: new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+            }),
+        }
+        setMessages((prev) => [...prev, userMsg])
+        setMessage('')
+        setSending(true)
+        try {
+            const data = await assistantChat(content)
+            const botMsg = {
+                id: Date.now() + 1,
+                type: 'bot',
+                message:
+                    data?.reply ||
+                    "Sorry — I couldn't generate a response. Please try again.",
+                timestamp: new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
+            }
+            setMessages((prev) => [...prev, botMsg])
+        } catch (e) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: Date.now() + 2,
+                    type: 'bot',
+                    message:
+                        e?.response?.data?.message ||
+                        'Assistant is unavailable right now.',
+                    timestamp: new Date().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                },
+            ])
+        } finally {
+            setSending(false)
+        }
+    }
+
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             <AnimatePresence>
@@ -47,13 +139,39 @@ export function ChatBubble() {
                         </div>
 
                         {/* Chat Area */}
-                        <div className="p-4 h-64 overflow-y-auto bg-gray-50 flex flex-col gap-3">
-                            <div className="bg-white p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-sm text-gray-800 max-w-[85%]">
-                                <p>
-                                    Hi there! 👋 I'm Libby. Need help finding a book or booking a
-                                    study room?
-                                </p>
-                            </div>
+                        <div
+                            ref={listRef}
+                            className="p-4 h-64 overflow-y-auto bg-gray-50 flex flex-col gap-3"
+                        >
+                            {messages.map((m) => (
+                                <div
+                                    key={m.id}
+                                    className={
+                                        m.type === 'user'
+                                            ? 'flex justify-end'
+                                            : 'flex justify-start'
+                                    }
+                                >
+                                    <div
+                                        className={
+                                            m.type === 'user'
+                                                ? 'bg-[#fb7185] text-white p-3 rounded-2xl rounded-tr-sm shadow-sm border border-gray-100 text-sm max-w-[85%]'
+                                                : 'bg-white p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 text-sm text-gray-800 max-w-[85%]'
+                                        }
+                                    >
+                                        <p className="whitespace-pre-line">{m.message}</p>
+                                        <p
+                                            className={
+                                                m.type === 'user'
+                                                    ? 'text-[11px] text-white/70 mt-1'
+                                                    : 'text-[11px] text-gray-500 mt-1'
+                                            }
+                                        >
+                                            {m.timestamp}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                         {/* Input Area */}
@@ -62,10 +180,17 @@ export function ChatBubble() {
                                 type="text"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') sendMessage()
+                                }}
                                 placeholder="Ask me anything..."
                                 className="flex-1 bg-gray-50 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/50"
                             />
-                            <button className="bg-[#fb7185] text-white p-2 rounded-full hover:bg-coral/90 transition-colors flex-shrink-0">
+                            <button
+                                onClick={() => sendMessage()}
+                                disabled={sending}
+                                className="bg-[#fb7185] text-white p-2 rounded-full hover:bg-coral/90 transition-colors flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
                                 <Send size={16} />
                             </button>
                         </div>
