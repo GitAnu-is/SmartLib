@@ -57,8 +57,38 @@ export function Navbar({ currentPage, onNavigate }) {
     const [showMoreMenu, setShowMoreMenu] = useState(false)
     const [showUserMenu, setShowUserMenu] = useState(false)
     const isLoggedIn = Boolean(localStorage.getItem('token'))
+
+    const safeParseJson = (value, fallback) => {
+        if (!value) return fallback
+        try {
+            return JSON.parse(value)
+        } catch {
+            return fallback
+        }
+    }
+
+    const storedUser = safeParseJson(localStorage.getItem('user'), null)
+    const isAdmin = storedUser?.role === 'admin'
+    const dashboardTargetKey = isAdmin ? 'admin' : 'dashboard'
+
+    const displayName =
+        storedUser?.fullname ||
+        storedUser?.fullName ||
+        storedUser?.name ||
+        (typeof storedUser?.email === 'string' ? storedUser.email.split('@')[0] : '') ||
+        'User'
+    const initials = displayName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+
     const mainNavItems = navItems.slice(0, 3)
     const moreNavItems = navItems.slice(3, 6).filter(item => item.key !== 'admin')
+    const mobileNavItems = isAdmin ? navItems.filter((item) => item.key !== 'admin') : navItems
 
     return (
         <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -88,8 +118,10 @@ export function Navbar({ currentPage, onNavigate }) {
                         {mainNavItems.map((item) => (
                             <button
                                 key={item.key}
-                                onClick={() => onNavigate(item.key)}
-                                className={`font-bold transition-colors flex items-center gap-1.5 ${currentPage === item.key ? 'text-coral' : 'text-medium hover:text-dark'}`}
+                                onClick={() =>
+                                    onNavigate(item.key === 'dashboard' ? dashboardTargetKey : item.key)
+                                }
+                                className={`font-bold transition-colors flex items-center gap-1.5 ${currentPage === (item.key === 'dashboard' ? dashboardTargetKey : item.key) ? 'text-coral' : 'text-medium hover:text-dark'}`}
                             >
                                 {item.icon && <item.icon size={16} />}
                                 {item.label}
@@ -160,9 +192,9 @@ export function Navbar({ currentPage, onNavigate }) {
                                     }}
                                 >
                                     <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
-                                        AJ
+                                        {initials || 'U'}
                                     </div>
-                                    <span className="hidden sm:inline">User</span>
+                                    <span className="hidden sm:inline">{displayName}</span>
                                     <ChevronDown
                                         size={16}
                                         className={`transition-transform ${showUserMenu ? 'rotate-180' : ''}`}
@@ -199,6 +231,7 @@ export function Navbar({ currentPage, onNavigate }) {
                                             <button
                                                 onClick={() => {
                                                     localStorage.removeItem('token');
+                                                    localStorage.removeItem('user');
                                                     onNavigate('login');
                                                     setShowUserMenu(false)
                                                 }}
@@ -276,14 +309,14 @@ export function Navbar({ currentPage, onNavigate }) {
                         className="lg:hidden bg-white border-t border-gray-100 overflow-hidden"
                     >
                         <div className="px-4 py-4 space-y-2">
-                            {navItems.map((item) => (
+                            {mobileNavItems.map((item) => (
                                 <button
                                     key={item.key}
                                     onClick={() => {
-                                        onNavigate(item.key)
+                                        onNavigate(item.key === 'dashboard' ? dashboardTargetKey : item.key)
                                         setMobileMenuOpen(false)
                                     }}
-                                    className={`w-full px-4 py-3 rounded-2xl font-bold text-left transition-colors flex items-center gap-3 ${currentPage === item.key ? 'bg-teal/10 text-teal' : 'text-medium hover:bg-light hover:text-dark'}`}
+                                    className={`w-full px-4 py-3 rounded-2xl font-bold text-left transition-colors flex items-center gap-3 ${currentPage === (item.key === 'dashboard' ? dashboardTargetKey : item.key) ? 'bg-teal/10 text-teal' : 'text-medium hover:bg-light hover:text-dark'}`}
                                 >
                                     {item.icon && <item.icon size={20} />}
                                     {item.label}
@@ -294,6 +327,7 @@ export function Navbar({ currentPage, onNavigate }) {
                                 <motion.button
                                     onClick={() => {
                                         localStorage.removeItem('token');
+                                        localStorage.removeItem('user');
                                         onNavigate('login');
                                         setMobileMenuOpen(false)
                                     }}

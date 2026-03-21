@@ -27,6 +27,23 @@ const userSchema = new mongoose.Schema(
             enum: ['user', 'admin'],
             default: 'user',
         },
+
+        // Member record aggregates (updated on returns)
+        fineBalanceLkr: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        totalFineLkr: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        lateReturnCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
     },
     {
         timestamps: true,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
     UserIcon,
     MailIcon,
@@ -20,7 +21,16 @@ import {
 export function UserProfilePage() {
     const [isEditing, setIsEditing] = useState(false)
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const safeParseJson = (value, fallback) => {
+        if (!value) return fallback
+        try {
+            return JSON.parse(value)
+        } catch {
+            return fallback
+        }
+    }
+
+    const user = safeParseJson(localStorage.getItem('user'), {})
     const [formData, setFormData] = useState({
         fullName: user.fullname || 'Alex Johnson',
         email: user.email || 'alex.johnson@university.edu',
@@ -28,6 +38,33 @@ export function UserProfilePage() {
         department: 'Computer Science',
         year: '3rd Year',
     })
+
+    const handleSave = () => {
+        const fullName = (formData.fullName || '').trim()
+        if (!fullName) {
+            toast.error('Full name is required')
+            return
+        }
+        if (fullName.length < 3) {
+            toast.error('Full name is too short')
+            return
+        }
+        if (!/^[A-Za-z][A-Za-z\s.'-]*$/.test(fullName)) {
+            toast.error('Full name contains invalid characters')
+            return
+        }
+
+        const storedUser = safeParseJson(localStorage.getItem('user'), {})
+        const nextUser = {
+            ...storedUser,
+            fullname: fullName,
+            fullName: fullName,
+        }
+        localStorage.setItem('user', JSON.stringify(nextUser))
+        setFormData((prev) => ({ ...prev, fullName }))
+        toast.success('Profile updated')
+        setIsEditing(false)
+    }
 
     return (
         <div className="min-h-screen bg-light p-4 sm:p-8">
@@ -95,15 +132,15 @@ export function UserProfilePage() {
                             <input
                                 type="email"
                                 value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                disabled={!isEditing}
-                                className={`w-full px-4 py-3 bg-light border border-gray-200 rounded-2xl focus:ring-2 focus:ring-teal outline-none transition-all ${!isEditing ? 'opacity-70' : ''}`}
+                                disabled
+                                readOnly
+                                className="w-full px-4 py-3 bg-light border border-gray-200 rounded-2xl outline-none transition-all opacity-70 cursor-not-allowed"
                             />
                         </div>
                     </div>
                     {isEditing && (
                         <button
-                            onClick={() => setIsEditing(false)}
+                            onClick={handleSave}
                             className="mt-6 flex items-center gap-2 px-6 py-3 bg-teal text-white rounded-full font-bold shadow-lg"
                         >
                             <SaveIcon size={18} />Save Changes
