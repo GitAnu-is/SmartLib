@@ -1,6 +1,15 @@
 const mongoose = require('mongoose');
 
-const ACTIVITY_TYPES = ['approve', 'reject', 'add', 'update', 'delete', 'reply'];
+const ACTIVITY_TYPES = [
+  'approve',
+  'reject',
+  'add',
+  'update',
+  'delete',
+  'reply',
+  'return',
+  'reminder',
+];
 
 const activitySchema = new mongoose.Schema(
   {

@@ -1,6 +1,6 @@
 const path = require('path');
 const express = require('express');
-const dotenv = require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { errorHandler } = require('./middleware/errorMiddleware');
 const connectDB = require('./config/db');
 const cors = require('cors');

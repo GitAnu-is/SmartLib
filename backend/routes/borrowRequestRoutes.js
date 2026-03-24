@@ -7,6 +7,7 @@ const {
   approveBorrowRequest,
   rejectBorrowRequest,
   returnBorrowRequest,
+  sendOverdueReminder,
   cancelBorrowRequest,
 } = require('../controllers/borrowRequestController');
 
@@ -24,6 +25,7 @@ router
 router.patch('/:id/approve', protect, authorize('admin'), approveBorrowRequest);
 router.patch('/:id/reject', protect, authorize('admin'), rejectBorrowRequest);
 router.patch('/:id/return', protect, authorize('admin'), returnBorrowRequest);
+router.post('/:id/remind', protect, authorize('admin'), sendOverdueReminder);
 
 router.delete('/:id', protect, cancelBorrowRequest);
 

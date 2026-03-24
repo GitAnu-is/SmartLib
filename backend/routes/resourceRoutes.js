@@ -9,6 +9,7 @@ const {
   createResource,
   updateResource,
   deleteResource,
+  incrementResourceViews,
 } = require('../controllers/resourceController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -50,6 +51,7 @@ const upload = multer({
 });
 
 router.get('/public', protect, getResourcesPublic);
+router.patch('/:id/view', protect, incrementResourceViews);
 router.get('/', protect, authorize('admin'), getResources);
 router.post('/', protect, authorize('admin'), upload.single('file'), createResource);
 router.put('/:id', protect, authorize('admin'), upload.single('file'), updateResource);
