@@ -21,7 +21,7 @@ import {
   TrendingUpIcon,
   CheckCircleIcon,
 } from 'lucide-react'
-import { fetchResourcesPublic } from '../api/resources'
+import { fetchResourcesPublic, incrementResourceViews } from '../api/resources'
 import { fetchSpacesPublic } from '../api/spaces'
 import {
   cancelReservation,
@@ -110,11 +110,30 @@ export function SpaceELearningPage({ onNavigate: _onNavigate }) {
   }
 
   const openResourceFile = (resource) => {
+    const resourceId = resource?._id || resource?.id
     const url = resource?.fileUrl
     if (!url) {
       toast.error('File not available')
       return
     }
+
+    if (resourceId) {
+      incrementResourceViews(resourceId)
+        .then((updated) => {
+          const updatedId = updated?._id || updated?.id || resourceId
+          setResources((prev) =>
+            (Array.isArray(prev) ? prev : []).map((r) =>
+              (r?.id || r?._id) === updatedId
+                ? { ...r, views: Number(updated?.views) || (Number(r.views) || 0) + 1 }
+                : r
+            )
+          )
+        })
+        .catch(() => {
+          // best-effort; still allow opening the resource
+        })
+    }
+
     window.open(`${backendOrigin}${url}`, '_blank', 'noopener,noreferrer')
   }
 

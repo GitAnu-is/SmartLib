@@ -36,6 +36,7 @@ import {
   fetchBorrowRequestsAdmin,
   rejectBorrowRequest,
   returnBorrowRequest,
+  sendOverdueReminder,
 } from '../api/borrowRequests'
 
 import { fetchInquiriesAdmin, replyToInquiry } from '../api/inquiries'
@@ -261,6 +262,7 @@ export function AdminDashboardPage() {
   const [borrowRequestsLoading, setBorrowRequestsLoading] = useState(false)
   const [borrowRequestsError, setBorrowRequestsError] = useState('')
   const [borrowRequestActionLoading, setBorrowRequestActionLoading] = useState({})
+  const [overdueReminderLoading, setOverdueReminderLoading] = useState({})
 
   const [inquiries, setInquiries] = useState([])
   const [inquiriesLoading, setInquiriesLoading] = useState(false)
@@ -488,6 +490,13 @@ export function AdminDashboardPage() {
     }))
   }
 
+  const setReminderActionLoading = (requestId, isLoading) => {
+    setOverdueReminderLoading((prev) => ({
+      ...prev,
+      [requestId]: isLoading,
+    }))
+  }
+
   const handleApproveRequest = async (request) => {
     if (!request?._id) return
     setBorrowRequestsError('')
@@ -539,6 +548,20 @@ export function AdminDashboardPage() {
       )
     } finally {
       setRequestActionLoading(request._id, false)
+    }
+  }
+
+  const handleSendOverdueReminder = async (item) => {
+    if (!item?.id) return
+    setBorrowRequestsError('')
+    setReminderActionLoading(item.id, true)
+    try {
+      const result = await sendOverdueReminder(item.id)
+      toast.success(result?.to ? `Reminder sent to ${result.to}` : 'Reminder email sent')
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to send reminder')
+    } finally {
+      setReminderActionLoading(item.id, false)
     }
   }
 
@@ -1351,10 +1374,12 @@ export function AdminDashboardPage() {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
+                              onClick={() => handleSendOverdueReminder(item)}
+                              disabled={!!overdueReminderLoading[item.id]}
                               className="flex items-center gap-2 px-4 py-2 bg-golden text-dark rounded-full text-sm font-bold ml-auto"
                             >
                               <MailIcon size={16} />
-                              Send Reminder
+                              {overdueReminderLoading[item.id] ? 'Sending...' : 'Send Reminder'}
                             </motion.button>
                           </td>
                         </tr>

@@ -30,6 +30,11 @@ export async function returnBorrowRequest(requestId) {
   return data
 }
 
+export async function sendOverdueReminder(requestId) {
+  const { data } = await api.post(`/borrow-requests/${requestId}/remind`)
+  return data
+}
+
 export async function cancelBorrowRequest(requestId) {
   const { data } = await api.delete(`/borrow-requests/${requestId}`)
   return data

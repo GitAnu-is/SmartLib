@@ -32,3 +32,8 @@ export async function updateResource(resourceId, formData) {
   })
   return data
 }
+
+export async function incrementResourceViews(resourceId) {
+  const { data } = await api.patch(`/resources/${resourceId}/view`)
+  return data
+}

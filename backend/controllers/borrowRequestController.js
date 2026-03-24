@@ -3,6 +3,7 @@ const BorrowRequest = require('../models/BorrowRequest');
 const Book = require('../models/Book');
 const User = require('../models/User');
 const { logActivity } = require('../utils/activityLogger');
+const { sendMail } = require('../utils/mailer');
 
 const BORROW_PERIOD_DAYS = 7;
 const FINE_PER_DAY_LKR = 50;
@@ -273,6 +274,103 @@ const cancelBorrowRequest = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Borrow request cancelled' });
 });
 
+// @desc    Send overdue reminder email to a user (admin)
+// @route   POST /api/borrow-requests/:id/remind
+// @access  Private/Admin
+const sendOverdueReminder = asyncHandler(async (req, res) => {
+  const request = await BorrowRequest.findById(req.params.id)
+    .populate('book', 'title author category')
+    .populate('user', 'fullname email');
+
+  if (!request) {
+    res.status(404);
+    throw new Error('Borrow request not found');
+  }
+
+  if (request.status !== 'approved' || request.returnedAt) {
+    res.status(400);
+    throw new Error('This borrow request is not an active approved borrow');
+  }
+
+  const userEmail = request.user?.email;
+  if (!userEmail) {
+    res.status(400);
+    throw new Error('Borrower email is missing');
+  }
+
+  const now = new Date();
+  const borrowedAt = request.borrowedAt || request.createdAt || now;
+  const dueAt = request.dueAt || computeDueAt(borrowedAt);
+
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysLate = Math.max(
+    0,
+    Math.floor((startOfDay(now) - startOfDay(dueAt)) / msPerDay)
+  );
+
+  if (daysLate <= 0) {
+    res.status(400);
+    throw new Error('This item is not overdue');
+  }
+
+  const fineLkr = daysLate * FINE_PER_DAY_LKR;
+  const userName = request.user?.fullname || 'Student';
+  const bookTitle = request.book?.title || 'your borrowed book';
+  const dueDateStr = new Date(dueAt).toLocaleDateString('en-CA');
+
+  const subject = `SmartLib Reminder: Overdue book return (${bookTitle})`;
+  const text =
+    `Hello ${userName},\n\n` +
+    `This is a reminder that the book "${bookTitle}" is overdue.\n` +
+    `Due date: ${dueDateStr}\n` +
+    `Days late: ${daysLate}\n` +
+    `Current fine: Rs ${Number(fineLkr).toFixed(2)}\n\n` +
+    `Please return the book as soon as possible and settle the fine.\n\n` +
+    `Thank you,\nSmartLib Admin`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.5">
+      <p>Hello ${String(userName).replace(/</g, '&lt;').replace(/>/g, '&gt;')},</p>
+      <p>This is a reminder that the book <strong>${String(bookTitle)
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')}</strong> is overdue.</p>
+      <ul>
+        <li><strong>Due date:</strong> ${dueDateStr}</li>
+        <li><strong>Days late:</strong> ${daysLate}</li>
+        <li><strong>Current fine:</strong> Rs ${Number(fineLkr).toFixed(2)}</li>
+      </ul>
+      <p>Please return the book as soon as possible and settle the fine.</p>
+      <p>Thank you,<br/>SmartLib Admin</p>
+    </div>
+  `;
+
+  try {
+    await sendMail({
+      to: userEmail,
+      subject,
+      text,
+      html,
+    });
+  } catch (e) {
+    res.status(500);
+    throw new Error(e?.message || 'Failed to send reminder email');
+  }
+
+  await logActivity(req, {
+    type: 'reminder',
+    action: `Sent overdue reminder to ${userName} for "${bookTitle}"`,
+    meta: { requestId: request._id, userEmail, daysLate, fineLkr },
+  });
+
+  res.status(200).json({
+    message: 'Reminder email sent',
+    requestId: request._id,
+    to: userEmail,
+    daysLate,
+    fineLkr,
+  });
+});
+
 module.exports = {
   createBorrowRequest,
   getMyBorrowRequests,
@@ -280,5 +378,6 @@ module.exports = {
   approveBorrowRequest,
   rejectBorrowRequest,
   returnBorrowRequest,
+  sendOverdueReminder,
   cancelBorrowRequest,
 };

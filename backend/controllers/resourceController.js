@@ -155,10 +155,29 @@ const deleteResource = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Resource deleted' });
 });
 
+// @desc    Increment resource views (user)
+// @route   PATCH /api/resources/:id/view
+// @access  Private
+const incrementResourceViews = asyncHandler(async (req, res) => {
+  const updated = await Resource.findByIdAndUpdate(
+    req.params.id,
+    { $inc: { views: 1 } },
+    { new: true }
+  );
+
+  if (!updated) {
+    res.status(404);
+    throw new Error('Resource not found');
+  }
+
+  res.status(200).json(updated);
+});
+
 module.exports = {
   getResources,
   getResourcesPublic,
   createResource,
   updateResource,
   deleteResource,
+  incrementResourceViews,
 };
