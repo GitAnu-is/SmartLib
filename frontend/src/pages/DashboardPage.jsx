@@ -113,9 +113,16 @@ export function DashboardPage({ onNavigate }) {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="block w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-full text-dark focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none shadow-sm"
+                            className="block w-full pl-11 pr-12 py-3 bg-white border border-gray-200 rounded-full text-dark focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none shadow-sm"
                             placeholder="Search books, authors, or subjects..."
                         />
+                        <button
+                            type="submit"
+                            aria-label="Search"
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-medium hover:text-dark"
+                        >
+                            <Search size={20} />
+                        </button>
                     </form>
                 </div>
 
