@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
   LayoutDashboardIcon,
   BookOpenIcon,
@@ -804,15 +805,18 @@ export function AdminDashboardPage() {
     if (!title) errors.title = 'Title is required'
     if (!author) errors.author = 'Author is required'
     if (!category) errors.category = 'Category is required'
-    if (author && /\d/.test(author)) {
-      errors.author = 'Author name cannot contain numbers'
+    if (title && /[^A-Za-z\s]/.test(title)) {
+      errors.title = 'Title cannot contain numbers or symbols'
+    }
+    if (author && /[^A-Za-z\s]/.test(author)) {
+      errors.author = 'Author cannot contain numbers or symbols'
     }
     if (Number.isNaN(totalCopies)) {
       errors.totalCopies = 'Number of copies must be a number'
     } else if (!Number.isInteger(totalCopies)) {
       errors.totalCopies = 'Number of copies must be a whole number'
-    } else if (totalCopies < 0) {
-      errors.totalCopies = 'Number of copies cannot be negative'
+    } else if (totalCopies < 1) {
+      errors.totalCopies = 'Number of copies must be at least 1'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -831,8 +835,10 @@ export function AdminDashboardPage() {
     try {
       if (editingBook?._id) {
         await apiUpdateBook(editingBook._id, payload)
+        toast.success('Book updated successfully')
       } else {
         await apiCreateBook(payload)
+        toast.success('Book added successfully')
       }
       setShowAddBookModal(false)
       setEditingBook(null)
@@ -1630,9 +1636,17 @@ export function AdminDashboardPage() {
                     required
                     value={bookTitle}
                     onChange={(e) => {
-                      setBookTitle(e.target.value)
-                      if (bookFormErrors.title) {
-                        setBookFormErrors((prev) => ({ ...prev, title: undefined }))
+                      const nextValue = e.target.value
+                      if (/^[A-Za-z\s]*$/.test(nextValue)) {
+                        setBookTitle(nextValue)
+                        if (bookFormErrors.title) {
+                          setBookFormErrors((prev) => ({ ...prev, title: undefined }))
+                        }
+                      } else {
+                        setBookFormErrors((prev) => ({
+                          ...prev,
+                          title: 'Title cannot contain numbers or symbols',
+                        }))
                       }
                     }}
                     className={`w-full px-4 py-3 bg-light border rounded-2xl focus:ring-2 focus:ring-teal outline-none ${bookFormErrors.title ? 'border-coral' : 'border-gray-200'}`}
@@ -1648,10 +1662,17 @@ export function AdminDashboardPage() {
                     required
                     value={bookAuthor}
                     onChange={(e) => {
-                      const nextValue = e.target.value.replace(/\d/g, '')
-                      setBookAuthor(nextValue)
-                      if (bookFormErrors.author) {
-                        setBookFormErrors((prev) => ({ ...prev, author: undefined }))
+                      const nextValue = e.target.value
+                      if (/^[A-Za-z\s]*$/.test(nextValue)) {
+                        setBookAuthor(nextValue)
+                        if (bookFormErrors.author) {
+                          setBookFormErrors((prev) => ({ ...prev, author: undefined }))
+                        }
+                      } else {
+                        setBookFormErrors((prev) => ({
+                          ...prev,
+                          author: 'Author cannot contain numbers or symbols',
+                        }))
                       }
                     }}
                     className={`w-full px-4 py-3 bg-light border rounded-2xl focus:ring-2 focus:ring-teal outline-none ${bookFormErrors.author ? 'border-coral' : 'border-gray-200'}`}
@@ -1686,7 +1707,7 @@ export function AdminDashboardPage() {
                   <label className="block text-sm font-bold text-dark mb-2">Number of Copies</label>
                   <input
                     type="number"
-                    min={0}
+                    min={1}
                     step={1}
                     value={bookTotalCopies}
                     onChange={(e) => {
