@@ -5,8 +5,90 @@ const BorrowRequest = require('../models/BorrowRequest');
 const Inquiry = require('../models/Inquiry');
 const Reservation = require('../models/Reservation');
 
+const { ollamaChat } = require('../utils/ollamaClient');
+const { buildAssistantContext } = require('../utils/assistantContext');
+
 const BORROW_PERIOD_DAYS = 7;
 const FINE_PER_DAY_LKR = 50;
+
+function isOllamaEnabled() {
+  const mode = String(process.env.ASSISTANT_MODE || '').toLowerCase();
+  return mode === 'ollama' || mode === 'llm';
+}
+
+function getOllamaConfig() {
+  return {
+    baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+    model: process.env.OLLAMA_MODEL || 'llama3.1',
+    timeoutMs: Number(process.env.OLLAMA_TIMEOUT_MS) || 30000,
+  };
+}
+
+function buildSystemPrompt({ context }) {
+  return (
+    'You are Libby AI, the SmartLib library assistant.\n' +
+    'You must follow these rules:\n' +
+    '1) Use ONLY the provided context facts for availability, reservations, inquiries, and resources. If missing, say you cannot find it and suggest where in the app to check.\n' +
+    '2) Keep answers short and actionable (steps + key facts).\n' +
+    '3) Language: reply in the same language as the user message (Sinhala or English). If the user mixes Sinhala+English, you may mix too.\n' +
+    '4) Do not invent book titles, counts, links, times, or rules.\n' +
+    '5) If you suggest navigation, use these labels: “Search & Borrow”, “Spaces & E‑Learning”, “Inquiries”.\n' +
+    '\n' +
+    'Context JSON (authoritative):\n' +
+    JSON.stringify(context)
+  );
+}
+
+// @desc    Assistant health (mode + ollama reachability)
+// @route   GET /api/assistant/health
+// @access  Private
+const getAssistantHealth = asyncHandler(async (req, res) => {
+  const mode = String(process.env.ASSISTANT_MODE || 'rules').toLowerCase();
+  const health = {
+    mode,
+    ollama: null,
+  };
+
+  if (isOllamaEnabled()) {
+    const { baseUrl, model, timeoutMs } = getOllamaConfig();
+    const url = `${String(baseUrl).replace(/\/$/, '')}/api/tags`;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => '');
+        health.ollama = {
+          reachable: false,
+          baseUrl,
+          model,
+          error: `HTTP ${resp.status}: ${text || resp.statusText}`,
+        };
+      } else {
+        const data = await resp.json().catch(() => null);
+        const models = Array.isArray(data?.models)
+          ? data.models.map((m) => m?.name).filter(Boolean)
+          : [];
+        health.ollama = {
+          reachable: true,
+          baseUrl,
+          model,
+          availableModels: models.slice(0, 20),
+        };
+      }
+    } catch (e) {
+      health.ollama = {
+        reachable: false,
+        baseUrl,
+        model,
+        error: e?.name || e?.message || 'fetch_failed',
+      };
+    }
+  }
+
+  res.status(200).json(health);
+});
 
 function startOfDay(date) {
   const d = new Date(date);
@@ -265,11 +347,57 @@ const chatWithAssistant = asyncHandler(async (req, res) => {
   if (parts.length === 0) {
     parts.push(
       `I can help with: book availability, borrowing rules/fines, space reservations, inquiries, and e‑learning navigation.\n` +
-      `Try: “Check availability of \"Clean Code\"” or “What is my overdue risk?”`
+        `Try: “Check availability of \"Clean Code\"” or “What is my overdue risk?”`
     );
   }
 
   const insights = await buildInsightsForUser(req.user._id);
+
+  // Optional: Local LLM via Ollama (RAG-style: we provide factual context from DB)
+  if (isOllamaEnabled()) {
+    try {
+      const borrowPolicy = {
+        borrowPeriodDays: BORROW_PERIOD_DAYS,
+        finePerDayLkr: FINE_PER_DAY_LKR,
+      };
+
+      const context = await buildAssistantContext({
+        userId: req.user._id,
+        message,
+        borrowPolicy,
+      });
+
+      // Include computed insights too (helps risk answers and personalization)
+      context.insights = insights;
+      context.fallbackReply = parts.join('\n\n');
+
+      const system = buildSystemPrompt({ context });
+
+      const { baseUrl, model, timeoutMs } = getOllamaConfig();
+      const llm = await ollamaChat({
+        baseUrl,
+        model,
+        timeoutMs,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: message },
+        ],
+        temperature: 0.2,
+        top_p: 0.9,
+        num_predict: 450,
+      });
+
+      const reply = String(llm?.content || '').trim();
+      if (reply) {
+        return res.status(200).json({
+          reply,
+          insights,
+        });
+      }
+    } catch (e) {
+      // If local LLM isn't available, fall back to deterministic response.
+    }
+  }
 
   res.status(200).json({
     reply: parts.join('\n\n'),
@@ -278,6 +406,7 @@ const chatWithAssistant = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getAssistantHealth,
   getAssistantInsights,
   chatWithAssistant,
 };
