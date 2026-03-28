@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   SendIcon,
   BotIcon,
   UserIcon,
   SparklesIcon,
+  MicIcon,
   AlertTriangleIcon,
   BookOpenIcon,
   TrendingUpIcon,
@@ -18,6 +19,7 @@ import {
   GraduationCapIcon,
 } from 'lucide-react'
 import { assistantChat, fetchAssistantInsights } from '../api/assistant'
+import { useWakeWordSpeech } from '../hooks/useWakeWordSpeech'
 
 const initialChatHistory = [
   {
@@ -56,6 +58,8 @@ const quickActions = [
 export function AIAssistantPage({ onNavigate: _onNavigate }) {
   const [messages, setMessages] = useState(initialChatHistory)
   const [inputMessage, setInputMessage] = useState('')
+  const inputRef = useRef(null)
+  const inputModeRef = useRef('keyboard')
 
   const [sending, setSending] = useState(false)
   const [insightsLoading, setInsightsLoading] = useState(false)
@@ -195,6 +199,41 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
   }, [categoryStats])
 
   const formatLkr = (amount) => `Rs ${(Number(amount) || 0).toFixed(2)}`
+
+  const {
+    supported: voiceSupported,
+    listening: voiceListening,
+    awake: voiceAwake,
+    error: voiceError,
+    statusText: voiceStatusText,
+    lastHeard: voiceLastHeard,
+    audioActive: voiceAudioActive,
+    speechActive: voiceSpeechActive,
+    toggle: toggleVoice,
+  } = useWakeWordSpeech({
+    wakeWordRegex: /\b(hey|hi)[\s,]+(libby|liby|lippy)(\s+ai)?\b/i,
+    requireWakeWord: true,
+    onWake: () => {
+      inputModeRef.current = 'voice'
+      try {
+        inputRef.current?.focus()
+      } catch {
+        // ignore
+      }
+    },
+    onCommandText: (text) => {
+      if (inputModeRef.current !== 'voice') return
+      setInputMessage(text)
+    },
+    onCommandFinal: (text) => {
+      if (inputModeRef.current !== 'voice') return
+      handleSendMessage(text)
+      inputModeRef.current = 'keyboard'
+    },
+    commandIdleMs: 1200,
+    awakeIdleMs: 6000,
+  })
+
   return (
     <div className="min-h-screen bg-light p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
@@ -235,8 +274,46 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                     <BotIcon size={24} />
                   </div>
                   <div>
-                    <h2 className="font-extrabold text-lg">Libby AI</h2>
-                    <p className="text-teal-100 text-sm">Always here to help</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={toggleVoice}
+                        disabled={!voiceSupported}
+                        title={
+                          voiceError
+                            ? `Voice error: ${voiceError}`
+                            : voiceStatusText
+                        }
+                        aria-label="Toggle voice activation"
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                          voiceSupported
+                            ? 'bg-white/15 hover:bg-white/20'
+                            : 'bg-white/10 opacity-60 cursor-not-allowed'
+                        } ${voiceListening ? 'ring-2 ring-white/60' : ''}`}
+                      >
+                        <MicIcon size={18} className="text-white" />
+                      </button>
+                      <h2 className="font-extrabold text-lg">Libby AI</h2>
+                    </div>
+                    <p className="text-teal-100 text-sm">
+                      {!voiceSupported
+                        ? 'Voice not supported in this browser'
+                        : voiceError
+                          ? voiceError === 'insecure-context'
+                            ? 'Voice requires HTTPS (or localhost)'
+                            : `Voice error: ${voiceError}`
+                          : voiceListening
+                            ? voiceAwake
+                              ? 'Listening…'
+                              : voiceSpeechActive
+                                ? voiceLastHeard
+                                  ? `Heard: “${voiceLastHeard}” (say “Hey Libby”)`
+                                  : 'Say “Hey Libby”'
+                                : voiceAudioActive
+                                  ? 'Listening… (no speech yet)'
+                                  : 'Listening… (check mic permission)'
+                            : 'Click mic to talk'}
+                    </p>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
@@ -318,9 +395,13 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
               <div className="p-4 border-t border-gray-100 bg-white">
                 <div className="flex gap-3">
                   <input
+                    ref={inputRef}
                     type="text"
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={(e) => {
+                      inputModeRef.current = 'keyboard'
+                      setInputMessage(e.target.value)
+                    }}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Ask me anything about the library..."
                     className="flex-1 px-4 py-3 bg-light border border-gray-200 rounded-2xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none"
