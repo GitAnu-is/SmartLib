@@ -1,0 +1,596 @@
+const asyncHandler = require('express-async-handler');
+
+const Book = require('../models/Book');
+const BorrowRequest = require('../models/BorrowRequest');
+const Inquiry = require('../models/Inquiry');
+const Reservation = require('../models/Reservation');
+
+const { ollamaChat } = require('../utils/ollamaClient');
+const { buildAssistantContext } = require('../utils/assistantContext');
+
+const BORROW_PERIOD_DAYS = 7;
+const FINE_PER_DAY_LKR = 50;
+
+function isOllamaEnabled() {
+  const mode = String(process.env.ASSISTANT_MODE || '').toLowerCase();
+  return mode === 'ollama' || mode === 'llm';
+}
+
+function getOllamaConfig() {
+  return {
+    baseUrl: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+    model: process.env.OLLAMA_MODEL || 'llama3.1',
+    timeoutMs: Number(process.env.OLLAMA_TIMEOUT_MS) || 30000,
+  };
+}
+
+function buildSystemPrompt({ context }) {
+  return (
+    'You are Libby AI, the SmartLib library assistant.\n' +
+    'You must follow these rules:\n' +
+    '1) Use ONLY the provided context facts for availability, reservations, inquiries, and resources. If missing, say you cannot find it and suggest where in the app to check.\n' +
+    '2) Keep answers short and actionable (steps + key facts).\n' +
+    '3) Language: reply in the same language as the user message (Sinhala or English). If the user mixes Sinhala+English, you may mix too.\n' +
+    '4) Do not invent book titles, counts, links, times, or rules.\n' +
+    '5) If you suggest navigation, use these labels: “Search & Borrow”, “Spaces & E‑Learning”, “Inquiries”.\n' +
+    '\n' +
+    'Context JSON (authoritative):\n' +
+    JSON.stringify(context)
+  );
+}
+
+// @desc    Assistant health (mode + ollama reachability)
+// @route   GET /api/assistant/health
+// @access  Private
+const getAssistantHealth = asyncHandler(async (req, res) => {
+  const mode = String(process.env.ASSISTANT_MODE || 'rules').toLowerCase();
+  const health = {
+    mode,
+    ollama: null,
+  };
+
+  if (isOllamaEnabled()) {
+    const { baseUrl, model, timeoutMs } = getOllamaConfig();
+    const url = `${String(baseUrl).replace(/\/$/, '')}/api/tags`;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => '');
+        health.ollama = {
+          reachable: false,
+          baseUrl,
+          model,
+          error: `HTTP ${resp.status}: ${text || resp.statusText}`,
+        };
+      } else {
+        const data = await resp.json().catch(() => null);
+        const models = Array.isArray(data?.models)
+          ? data.models.map((m) => m?.name).filter(Boolean)
+          : [];
+        health.ollama = {
+          reachable: true,
+          baseUrl,
+          model,
+          availableModels: models.slice(0, 20),
+        };
+      }
+    } catch (e) {
+      health.ollama = {
+        reachable: false,
+        baseUrl,
+        model,
+        error: e?.name || e?.message || 'fetch_failed',
+      };
+    }
+  }
+
+  res.status(200).json(health);
+});
+
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function computeDueAt(borrowedAt) {
+  const due = new Date(borrowedAt);
+  due.setDate(due.getDate() + BORROW_PERIOD_DAYS);
+  return due;
+}
+
+function calcLateDays(asOf, dueAt) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.max(
+    0,
+    Math.floor((startOfDay(asOf) - startOfDay(dueAt)) / msPerDay)
+  );
+}
+
+async function computeRiskAndFinesForUser(userId) {
+  const now = new Date();
+
+  const allRequests = await BorrowRequest.find({ user: userId, status: 'approved' })
+    .populate('book', 'title category')
+    .sort({ createdAt: -1 });
+
+  const active = allRequests.filter((r) => !r.returnedAt);
+  const returned = allRequests.filter((r) => Boolean(r.returnedAt));
+
+  const pastLateReturns = returned.filter((r) => {
+    const borrowedAt = r.borrowedAt || r.createdAt;
+    const dueAt = r.dueAt || computeDueAt(borrowedAt);
+    const returnedAt = r.returnedAt;
+    if (!returnedAt) return false;
+    return calcLateDays(returnedAt, dueAt) > 0;
+  }).length;
+
+  const activeItems = active.map((r) => {
+    const borrowedAt = r.borrowedAt || r.createdAt;
+    const dueAt = r.dueAt || computeDueAt(borrowedAt);
+    const remainingDays = Math.ceil((startOfDay(dueAt) - startOfDay(now)) / (24 * 60 * 60 * 1000));
+    const lateDays = calcLateDays(now, dueAt);
+    const currentFineLkr = lateDays * FINE_PER_DAY_LKR;
+    return {
+      requestId: r._id,
+      dueAt,
+      remainingDays,
+      lateDays,
+      currentFineLkr,
+    };
+  });
+
+  const overdueCount = activeItems.filter((x) => x.lateDays > 0).length;
+  const dueSoonItems = activeItems
+    .filter((x) => x.remainingDays >= 0 && x.remainingDays <= 3)
+    .sort((a, b) => a.remainingDays - b.remainingDays);
+
+  const dueSoonCount = dueSoonItems.length;
+  const dueSoonMinDays = dueSoonCount > 0 ? dueSoonItems[0].remainingDays : null;
+
+  const currentOverdueFineLkr = activeItems
+    .filter((x) => x.currentFineLkr > 0)
+    .reduce((sum, x) => sum + x.currentFineLkr, 0);
+
+  // Simple risk model: weight past behavior + proximity + active overdue
+  let score = 0;
+  score += pastLateReturns * 20;
+  score += dueSoonCount * 15;
+  score += overdueCount * 30;
+  score = Math.max(0, Math.min(100, score));
+
+  const level = overdueCount > 0 || score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
+
+  return {
+    level,
+    score,
+    pastLateReturns,
+    dueSoonCount,
+    dueSoonMinDays,
+    overdueCount,
+    currentOverdueFineLkr,
+  };
+}
+
+async function buildInsightsForUser(userId) {
+  const risk = await computeRiskAndFinesForUser(userId);
+
+  const requests = await BorrowRequest.find({ user: userId })
+    .populate('book', 'title category')
+    .sort({ createdAt: -1 })
+    .limit(200);
+
+  const categoryCounts = new Map();
+  for (const r of requests) {
+    const cat = r.book?.category;
+    if (!cat) continue;
+    categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+  }
+  const categoryStats = Array.from(categoryCounts.entries())
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const fineRequests = await BorrowRequest.find({ user: userId, fineLkr: { $gt: 0 } })
+    .populate('book', 'title')
+    .sort({ returnedAt: -1, createdAt: -1 })
+    .limit(5);
+
+  const fineRecords = fineRequests.map((r) => ({
+    id: r._id,
+    book: r.book?.title || 'Book',
+    amountLkr: Number(r.fineLkr) || 0,
+    status: r.finePaid ? 'paid' : 'unpaid',
+    date: (r.returnedAt || r.createdAt || new Date()).toISOString().slice(0, 10),
+  }));
+
+  const recommendations = await Book.find({ status: 'available', copies: { $gt: 0 } })
+    .sort({ rating: -1, createdAt: -1 })
+    .limit(3)
+    .select('title author rating coverColor');
+
+  return { risk, categoryStats, fineRecords, recommendations };
+}
+
+async function buildGuestInsights() {
+  const recommendations = await Book.find({ status: 'available', copies: { $gt: 0 } })
+    .sort({ rating: -1, createdAt: -1 })
+    .limit(3)
+    .select('title author rating coverColor status copies');
+
+  return {
+    risk: {
+      level: 'guest',
+      score: 0,
+      pastLateReturns: null,
+      dueSoonCount: null,
+      dueSoonMinDays: null,
+      overdueCount: null,
+      currentOverdueFineLkr: null,
+    },
+    categoryStats: [],
+    fineRecords: [],
+    recommendations,
+  };
+}
+
+function extractQuoted(text) {
+  const s = String(text || '');
+  const m1 = s.match(/"([^"]{2,})"/);
+  if (m1?.[1]) return m1[1];
+  const m2 = s.match(/'([^']{2,})'/);
+  if (m2?.[1]) return m2[1];
+  return '';
+}
+
+function formatLkr(amount) {
+  const n = Number(amount) || 0;
+  return `Rs ${n.toFixed(2)}`;
+}
+
+const RULE_INTENTS = [
+  {
+    name: 'greeting',
+    priority: 0,
+    patterns: [/\b(hi|hello|hey|good\s+(morning|afternoon|evening))\b/i],
+  },
+  {
+    name: 'availability',
+    priority: 1,
+    patterns: [
+      /\b(available|availability|copies|in stock|have this book|is .* available)\b/i,
+      /\b(find|search|look for)\b.*\b(book|title)\b/i,
+    ],
+  },
+  {
+    name: 'borrow_rules',
+    priority: 2,
+    patterns: [
+      /\b(borrow(ing)?|borrow rule|loan period|how long|due date)\b/i,
+      /\b(fine|late return|overdue charge|penalty)\b/i,
+    ],
+  },
+  {
+    name: 'reservations',
+    priority: 3,
+    patterns: [
+      /\b(reserve|reservation|book a|booking|study room|space|seat)\b/i,
+    ],
+  },
+  {
+    name: 'inquiries',
+    priority: 4,
+    patterns: [
+      /\b(inquiry|inquiries|support|help desk|ticket|question)\b/i,
+    ],
+  },
+  {
+    name: 'elearning',
+    priority: 5,
+    patterns: [
+      /\b(e-?learning|resources|materials|video|pdf|notes|tutorial)\b/i,
+    ],
+  },
+  {
+    name: 'risk',
+    priority: 6,
+    patterns: [
+      /\b(risk|overdue|late|due soon|fine status|my fines)\b/i,
+    ],
+  },
+  {
+    name: 'thanks',
+    priority: 7,
+    patterns: [/\b(thanks|thank you|thx)\b/i],
+  },
+];
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function detectRuleIntents(text) {
+  const source = String(text || '');
+  const scored = [];
+
+  for (const intent of RULE_INTENTS) {
+    const score = intent.patterns.reduce(
+      (sum, pattern) => (pattern.test(source) ? sum + 1 : sum),
+      0
+    );
+    if (score > 0) {
+      scored.push({
+        name: intent.name,
+        score,
+        priority: intent.priority,
+      });
+    }
+  }
+
+  return scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.priority - b.priority;
+  });
+}
+
+function extractBookCandidate(message) {
+  const quoted = extractQuoted(message);
+  if (quoted) return quoted;
+
+  const cleaned = String(message || '')
+    .replace(/\b(check|find|search|look for|availability|available|copies|in stock|please|can you|could you|tell me|about|book|title|of)\b/gi, ' ')
+    .replace(/[^a-z0-9\s]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return cleaned;
+}
+
+async function findBooksByCandidate(candidate) {
+  if (!candidate || candidate.length < 2) return [];
+
+  const regex = new RegExp(escapeRegex(candidate), 'i');
+  const tokens = candidate
+    .split(' ')
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3)
+    .slice(0, 4);
+
+  const tokenRegexes = tokens.map((t) => new RegExp(escapeRegex(t), 'i'));
+
+  const query = {
+    $or: [
+      { title: regex },
+      { author: regex },
+      ...(tokenRegexes.length > 0
+        ? tokenRegexes.flatMap((tr) => [{ title: tr }, { author: tr }])
+        : []),
+    ],
+  };
+
+  return Book.find(query)
+    .sort({ rating: -1, createdAt: -1 })
+    .limit(5)
+    .select('title author copies status rating');
+}
+
+// @desc    Assistant insights (risk/fines/categories)
+// @route   GET /api/assistant/insights
+// @access  Private
+const getAssistantInsights = asyncHandler(async (req, res) => {
+  const insights = req.user?._id
+    ? await buildInsightsForUser(req.user._id)
+    : await buildGuestInsights();
+  res.status(200).json(insights);
+});
+
+// @desc    Assistant chat
+// @route   POST /api/assistant/chat
+// @access  Private
+const chatWithAssistant = asyncHandler(async (req, res) => {
+  const message = String(req.body?.message || '').trim();
+  const userId = req.user?._id || null;
+
+  if (!message) {
+    res.status(400);
+    throw new Error('message is required');
+  }
+  if (message.length > 1000) {
+    res.status(400);
+    throw new Error('message is too long');
+  }
+
+  const matchedIntents = detectRuleIntents(message);
+  const intentNames = new Set(matchedIntents.map((i) => i.name));
+
+  const parts = [];
+  let responseBooks = [];
+
+  if (intentNames.has('greeting')) {
+    parts.push('Hi! I am Libby. I can help with book availability, rules, reservations, inquiries, e-learning navigation, and overdue risk.');
+  }
+
+  if (intentNames.has('availability')) {
+    const titleCandidate = extractBookCandidate(message);
+
+    if (!titleCandidate || titleCandidate.length < 2) {
+      parts.push('Tell me the book title (you can put it in quotes), and I’ll check availability.');
+    } else {
+      const matches = await findBooksByCandidate(titleCandidate);
+
+      if (matches.length === 0) {
+        parts.push(`I could not find a matching title for "${titleCandidate}". Try a shorter keyword, title in quotes, or author name.`);
+      } else {
+        responseBooks = matches.map((b) => ({
+          title: b.title,
+          author: b.author,
+          available: (typeof b.copies === 'number' ? b.copies : 0) > 0,
+          rating: b.rating,
+        }));
+
+        const lines = matches.map((b) => {
+          const copies = typeof b.copies === 'number' ? b.copies : 0;
+          const status = b.status || (copies > 0 ? 'available' : 'borrowed');
+          return `• ${b.title} — ${copies} copies (${status})`;
+        });
+        parts.push(`Here is what I found:\n${lines.join('\n')}`);
+      }
+    }
+  }
+
+  if (intentNames.has('borrow_rules')) {
+    parts.push(
+      `Borrowing rules (summary):\n` +
+      `• Submit a borrow request from “Search & Borrow”.\n` +
+      `• Once approved, the due date is ${BORROW_PERIOD_DAYS} days from the borrow date.\n` +
+      `• If returned late, the fine is Rs ${FINE_PER_DAY_LKR}.00 per day (after the due date).`
+    );
+  }
+
+  if (intentNames.has('reservations')) {
+    if (!userId) {
+      parts.push(
+        `To check your reservations, log in and go to “Spaces & E‑Learning” → “Library Spaces”.\n` +
+        `To create one: choose a space + time slot, then confirm.`
+      );
+    } else {
+      const upcoming = await Reservation.find({
+        user: userId,
+        status: { $in: ['Upcoming', 'Active'] },
+      })
+        .sort({ createdAt: -1 })
+        .limit(3);
+
+      if (upcoming.length === 0) {
+        parts.push(
+          `You don’t have any upcoming space reservations. To reserve: go to “Spaces & E‑Learning” → “Library Spaces”, choose a space and time slot, then confirm.`
+        );
+      } else {
+        const lines = upcoming.map((r) => `• ${r.spaceName} — ${r.date} (${r.time})`);
+        parts.push(`Your upcoming reservations:\n${lines.join('\n')}`);
+      }
+    }
+  }
+
+  if (intentNames.has('inquiries')) {
+    if (!userId) {
+      parts.push(
+        `For personal inquiry status, log in first.\n` +
+        `To submit a new inquiry: open “Inquiries”, add subject + message, and send.`
+      );
+    } else {
+      const inquiries = await Inquiry.find({ user: userId }).sort({ createdAt: -1 }).limit(50);
+      const pending = inquiries.filter((i) => i.status === 'pending').length;
+      const answered = inquiries.filter((i) => i.status === 'answered').length;
+
+      parts.push(
+        `Inquiries status: ${pending} pending, ${answered} answered.\n` +
+        `To submit a new inquiry: go to your Inquiry section and send your question (subject + message).`
+      );
+    }
+  }
+
+  if (intentNames.has('elearning')) {
+    parts.push(
+      `E‑Learning navigation: go to “Spaces & E‑Learning” → “E‑Learning Resources”. You can open videos/PDFs/notes from the resource list.`
+    );
+  }
+
+  if (intentNames.has('risk')) {
+    if (!userId) {
+      parts.push(
+        `I can explain risk calculation, but your personal overdue risk needs login.\n` +
+        `Rule summary: borrow period is ${BORROW_PERIOD_DAYS} days and overdue fine is Rs ${FINE_PER_DAY_LKR}.00 per day.`
+      );
+    } else {
+      const risk = await computeRiskAndFinesForUser(userId);
+      const dueSoonText = risk.dueSoonCount > 0
+        ? `${risk.dueSoonCount} item(s) due soon (closest in ${risk.dueSoonMinDays} day(s))`
+        : 'No items due soon';
+
+      parts.push(
+        `Overdue risk: ${risk.level.toUpperCase()} (score ${risk.score}/100).\n` +
+        `• Past late returns: ${risk.pastLateReturns}\n` +
+        `• ${dueSoonText}\n` +
+        `• Current overdue fine (so far): ${formatLkr(risk.currentOverdueFineLkr)}`
+      );
+    }
+  }
+
+  if (intentNames.has('thanks')) {
+    parts.push('You are welcome. Ask another question any time.');
+  }
+
+  if (parts.length === 0) {
+    parts.push(
+      `I can help with: book availability, borrowing rules/fines, space reservations, inquiries, and e‑learning navigation.\n` +
+        `Try: “Check availability of \"Clean Code\"” or “What is my overdue risk?”`
+    );
+  }
+
+  const insights = userId
+    ? await buildInsightsForUser(userId)
+    : await buildGuestInsights();
+
+  // Optional: Local LLM via Ollama (RAG-style: we provide factual context from DB)
+  if (isOllamaEnabled() && userId) {
+    try {
+      const borrowPolicy = {
+        borrowPeriodDays: BORROW_PERIOD_DAYS,
+        finePerDayLkr: FINE_PER_DAY_LKR,
+      };
+
+      const context = await buildAssistantContext({
+        userId,
+        message,
+        borrowPolicy,
+      });
+
+      // Include computed insights too (helps risk answers and personalization)
+      context.insights = insights;
+      context.fallbackReply = parts.join('\n\n');
+
+      const system = buildSystemPrompt({ context });
+
+      const { baseUrl, model, timeoutMs } = getOllamaConfig();
+      const llm = await ollamaChat({
+        baseUrl,
+        model,
+        timeoutMs,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: message },
+        ],
+        temperature: 0.2,
+        top_p: 0.9,
+        num_predict: 450,
+      });
+
+      const reply = String(llm?.content || '').trim();
+      if (reply) {
+        return res.status(200).json({
+          reply,
+          insights,
+          books: responseBooks,
+        });
+      }
+    } catch (e) {
+      // If local LLM isn't available, fall back to deterministic response.
+    }
+  }
+
+  res.status(200).json({
+    reply: parts.join('\n\n'),
+    insights,
+    books: responseBooks,
+  });
+});
+
+module.exports = {
+  getAssistantHealth,
+  getAssistantInsights,
+  chatWithAssistant,
+};
