@@ -12,6 +12,8 @@ import { SearchBorrowPage } from './pages/SearchBorrowPage'
 import { AIAssistantPage } from './pages/AIAssistantPage'
 import { SpaceELearningPage } from './pages/SpaceELearningPage'
 import { AdminSpacesELearning } from './pages/AdminSpacesELearning'
+import { ContactUsPage } from './pages/ContactUsPage'
+import { HelpCenterPage } from './pages/HelpCenterPage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('landing')
@@ -80,6 +82,10 @@ function App() {
         )
       case 'profile':
         return <UserProfilePage onNavigate={setCurrentPage} />
+      case 'contact-us':
+        return <ContactUsPage onNavigate={setCurrentPage} />
+      case 'help-center':
+        return <HelpCenterPage onNavigate={setCurrentPage} />
       default:
         return <LandingPage onNavigate={setCurrentPage} />
     }

@@ -185,48 +185,10 @@ const deleteBook = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Book removed' });
 });
 
-// @desc    Upload book cover image
-// @route   POST /api/books/:id/upload-cover
-// @access  Private/Admin
-const uploadCoverImage = asyncHandler(async (req, res) => {
-  const book = await Book.findById(req.params.id);
-
-  if (!book) {
-    res.status(404);
-    throw new Error('Book not found');
-  }
-
-  if (!req.file) {
-    res.status(400);
-    throw new Error('No image file provided. Make sure to select a file and try again.');
-  }
-
-  // Store the relative path to the uploaded image
-  const coverImageUrl = `/uploads/books/${req.file.filename}`;
-  book.coverImageUrl = coverImageUrl;
-
-  await book.save();
-
-  console.log(`[Book Cover Upload] Success - Book: ${book.title}, File: ${req.file.filename}`);
-
-  await logActivity(req.user._id, {
-    type: 'update',
-    action: `Uploaded cover image for book "${book.title}"`,
-    meta: { bookId: book._id, title: book.title, filename: req.file.filename },
-  });
-
-  res.status(200).json({
-    success: true,
-    message: 'Cover image uploaded successfully',
-    book,
-  });
-});
-
 module.exports = {
   getBooks,
   getBookById,
   createBook,
   updateBook,
   deleteBook,
-  uploadCoverImage,
 };

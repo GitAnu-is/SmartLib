@@ -45,9 +45,9 @@ const bookSchema = new mongoose.Schema(
       default: 'bg-teal',
       trim: true,
     },
-    coverImageUrl: {
+    coverImage: {
       type: String,
-      default: null,
+      default: '',
       trim: true,
     },
     rating: {

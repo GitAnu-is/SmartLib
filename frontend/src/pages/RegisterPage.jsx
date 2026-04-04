@@ -10,17 +10,30 @@ export function RegisterPage({ onNavigate }) {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
 
+    // Password validation function
+    const validatePassword = (pwd) => {
+        const validations = {
+            length: pwd.length === 8,
+            uppercase: /[A-Z]/.test(pwd),
+            lowercase: /[a-z]/.test(pwd),
+            number: /[0-9]/.test(pwd),
+            symbol: /[!@#$%^&*()_+\-=\[\]{};:'",.<>?\\/|`~]/.test(pwd)
+        }
+        return validations
+    }
+
+    const passwordValidations = validatePassword(password)
+    const isPasswordValid = Object.values(passwordValidations).every(v => v === true)
+
     const handleSubmit = async (e) => {
         e.preventDefault()
-        setLoading(true)
-
-        const passwordRules = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
-        if (!passwordRules.test(password)) {
-            toast.error('Password must be at least 8 characters long and include lowercase, uppercase, and numbers.')
-            setLoading(false)
+        
+        if (!isPasswordValid) {
+            toast.error('Password does not meet all requirements')
             return
         }
 
+        setLoading(true)
         try {
             const { data } = await api.post('/auth/register', { fullname, email, password })
             localStorage.setItem('token', data.token)
@@ -136,23 +149,70 @@ export function RegisterPage({ onNavigate }) {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="block w-full pl-11 pr-4 py-3.5 bg-light border border-gray-200 rounded-2xl text-dark focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none"
+                                        className={`block w-full pl-11 pr-4 py-3.5 bg-light border rounded-2xl text-dark focus:ring-2 focus:border-transparent transition-all outline-none ${
+                                            password && !isPasswordValid
+                                                ? 'border-red-400 focus:ring-red-300'
+                                                : password && isPasswordValid
+                                                ? 'border-green-400 focus:ring-green-300'
+                                                : 'border-gray-200 focus:ring-teal'
+                                        }`}
                                         autoComplete="off"
-                                        placeholder="Enter Password"
+                                        placeholder="Enter Password (exactly 8 characters)"
+                                        maxLength="8"
                                     />
                                 </div>
+                                
+                                {/* Password Validation Requirements */}
+                                {password && (
+                                    <div className="mt-3 space-y-2">
+                                        <div className={`flex items-center gap-2 text-sm ${passwordValidations.length ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold ${passwordValidations.length ? 'bg-green-600' : 'bg-red-400'}`}>
+                                                {passwordValidations.length ? '✓' : '✕'}
+                                            </span>
+                                            Exactly 8 characters
+                                        </div>
+                                        <div className={`flex items-center gap-2 text-sm ${passwordValidations.uppercase ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold ${passwordValidations.uppercase ? 'bg-green-600' : 'bg-red-400'}`}>
+                                                {passwordValidations.uppercase ? '✓' : '✕'}
+                                            </span>
+                                            Capital letter (A-Z)
+                                        </div>
+                                        <div className={`flex items-center gap-2 text-sm ${passwordValidations.lowercase ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold ${passwordValidations.lowercase ? 'bg-green-600' : 'bg-red-400'}`}>
+                                                {passwordValidations.lowercase ? '✓' : '✕'}
+                                            </span>
+                                            Lowercase letter (a-z)
+                                        </div>
+                                        <div className={`flex items-center gap-2 text-sm ${passwordValidations.number ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold ${passwordValidations.number ? 'bg-green-600' : 'bg-red-400'}`}>
+                                                {passwordValidations.number ? '✓' : '✕'}
+                                            </span>
+                                            Number (0-9)
+                                        </div>
+                                        <div className={`flex items-center gap-2 text-sm ${passwordValidations.symbol ? 'text-green-600' : 'text-red-600'}`}>
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold ${passwordValidations.symbol ? 'bg-green-600' : 'bg-red-400'}`}>
+                                                {passwordValidations.symbol ? '✓' : '✕'}
+                                            </span>
+                                            Symbol (!@#$%^&* etc.)
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <motion.button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || !isPasswordValid || !fullname || !email}
                                 whileHover={{
-                                    scale: 1.02,
+                                    scale: (!isPasswordValid || !fullname || !email || loading) ? 1 : 1.02,
                                 }}
                                 whileTap={{
-                                    scale: 0.98,
+                                    scale: (!isPasswordValid || !fullname || !email || loading) ? 1 : 0.98,
                                 }}
-                                className={`w-full bg-coral text-white font-bold py-4 rounded-full shadow-lg shadow-coral/30 hover:shadow-xl transition-all flex justify-center items-center gap-2 mt-4 ${loading ? 'opacity-70' : ''}`}
+                                className={`w-full font-bold py-4 rounded-full shadow-lg transition-all flex justify-center items-center gap-2 mt-4 ${
+                                    loading || !isPasswordValid || !fullname || !email
+                                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60'
+                                        : 'bg-coral text-white hover:shadow-xl shadow-coral/30'
+                                }`}
                             >
                                 {loading ? 'Registering...' : 'Register'} <ArrowRight size={20} />
                             </motion.button>

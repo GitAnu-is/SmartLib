@@ -22,7 +22,6 @@ import {
   XIcon,
   ChevronRightIcon,
   SendIcon,
-  ImageIcon,
 } from 'lucide-react'
 
 import {
@@ -30,7 +29,6 @@ import {
   createBook as apiCreateBook,
   updateBook as apiUpdateBook,
   deleteBook as apiDeleteBook,
-  uploadBookCoverImage,
 } from '../api/books'
 
 import {
@@ -45,8 +43,6 @@ import { fetchInquiriesAdmin, replyToInquiry } from '../api/inquiries'
 import { fetchActivitiesAdmin } from '../api/activities'
 import { fetchAdminStats } from '../api/admin'
 import { fetchReportCsv } from '../api/reports'
-
-import BookCoverImage from '../components/BookCoverImage'
 
 const BORROW_PERIOD_DAYS = 7
 const FINE_PER_DAY_LKR = 50
@@ -233,6 +229,7 @@ const sidebarItems = [
   { key: 'overview', label: 'Dashboard Overview', icon: LayoutDashboardIcon },
   { key: 'books', label: 'Book Management', icon: BookOpenIcon },
   { key: 'requests', label: 'Borrow Requests', icon: ClipboardListIcon },
+  { key: 'returned', label: 'Returned Books', icon: CheckCircleIcon },
   { key: 'overdue', label: 'Overdue Tracking', icon: AlertTriangleIcon },
   { key: 'inquiries', label: 'Inquiry Management', icon: MessageSquareIcon },
   { key: 'reports', label: 'Reports', icon: FileTextIcon },
@@ -262,16 +259,12 @@ export function AdminDashboardPage() {
   const [booksError, setBooksError] = useState('')
   const [editingBook, setEditingBook] = useState(null)
 
-  const [showCoverUploadModal, setShowCoverUploadModal] = useState(false)
-  const [coverUploadBook, setCoverUploadBook] = useState(null)
-  const [coverUploadLoading, setCoverUploadLoading] = useState(false)
-  const [coverUploadFile, setCoverUploadFile] = useState(null)
-
   const [borrowRequests, setBorrowRequests] = useState([])
   const [borrowRequestsLoading, setBorrowRequestsLoading] = useState(false)
   const [borrowRequestsError, setBorrowRequestsError] = useState('')
   const [borrowRequestActionLoading, setBorrowRequestActionLoading] = useState({})
   const [overdueReminderLoading, setOverdueReminderLoading] = useState({})
+  const [returnedBooksFilter, setReturnedBooksFilter] = useState('all')
 
   const [inquiries, setInquiries] = useState([])
   const [inquiriesLoading, setInquiriesLoading] = useState(false)
@@ -575,7 +568,7 @@ export function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    if (activeSection === 'requests' || activeSection === 'overdue') {
+    if (activeSection === 'requests' || activeSection === 'overdue' || activeSection === 'returned') {
       loadBorrowRequests()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -889,45 +882,6 @@ export function AdminDashboardPage() {
     }
   }
 
-  const handleCoverUpload = async () => {
-    if (!coverUploadFile || !coverUploadBook) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    // Validate file size and type
-    if (coverUploadFile.size > 5 * 1024 * 1024) {
-      toast.error('File size exceeds 5MB limit')
-      return
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-    if (!allowedTypes.includes(coverUploadFile.type)) {
-      toast.error('Only JPG, PNG, and WebP images are allowed')
-      return
-    }
-
-    try {
-      setCoverUploadLoading(true)
-      console.log(`[Cover Upload] Uploading file: ${coverUploadFile.name} (${coverUploadFile.type}, ${coverUploadFile.size} bytes) for book ID: ${coverUploadBook._id}`)
-      
-      await uploadBookCoverImage(coverUploadBook._id, coverUploadFile)
-      
-      console.log('[Cover Upload] Success!')
-      toast.success('Cover image uploaded successfully!')
-      setShowCoverUploadModal(false)
-      setCoverUploadFile(null)
-      setCoverUploadBook(null)
-      await loadBooks()
-    } catch (e) {
-      console.error('[Cover Upload] Error:', e)
-      const errorMessage = e?.response?.data?.message || e?.message || 'Failed to upload cover image'
-      toast.error(errorMessage)
-    } finally {
-      setCoverUploadLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-light flex">
       {/* Sidebar */}
@@ -1163,15 +1117,11 @@ export function AdminDashboardPage() {
                             <tr key={book._id} className="hover:bg-light/50">
                               <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                  <BookCoverImage 
-                                    title={book.title} 
-                                    coverColor={book.coverColor || 'bg-teal'} 
-                                    coverImageUrl={book.coverImageUrl}
-                                    width="w-10" 
-                                    height="h-14" 
-                                    rounded="rounded-lg" 
-                                    iconSize={16}
-                                  />
+                                  <div
+                                    className={`w-10 h-14 ${book.coverColor || 'bg-teal'} rounded-lg flex items-center justify-center`}
+                                  >
+                                    <BookOpenIcon size={16} className="text-white/50" />
+                                  </div>
                                   <div>
                                     <p className="font-bold text-dark">{book.title}</p>
                                     <p className="text-sm text-medium">{book.author}</p>
@@ -1190,15 +1140,6 @@ export function AdminDashboardPage() {
                               </td>
                               <td className="p-4 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => { setCoverUploadBook(book); setShowCoverUploadModal(true); }}
-                                    className="p-2 bg-light rounded-xl text-medium hover:text-golden"
-                                    title="Upload cover image"
-                                  >
-                                    <ImageIcon size={16} />
-                                  </motion.button>
                                   <motion.button
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
@@ -1445,6 +1386,196 @@ export function AdminDashboardPage() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Returned Books Section */}
+          {activeSection === 'returned' && (
+            <motion.div variants={containerVariants} initial="hidden" animate="show">
+              <motion.div
+                variants={itemVariants}
+                className="flex justify-between items-center mb-8"
+              >
+                <div>
+                  <h1 className="text-3xl font-extrabold text-dark mb-2">
+                    Returned Books ✅
+                  </h1>
+                  <p className="text-medium">
+                    View all returned books with complete return details and fine information.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex gap-4 flex-wrap">
+                  <button
+                    onClick={() => setReturnedBooksFilter('all')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'all'
+                        ? 'bg-teal text-white'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    All Returns
+                  </button>
+                  <button
+                    onClick={() => setReturnedBooksFilter('late')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'late'
+                        ? 'bg-coral text-white'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    Late Returns
+                  </button>
+                  <button
+                    onClick={() => setReturnedBooksFilter('ontime')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'ontime'
+                        ? 'bg-teal text-white'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    On-Time Returns
+                  </button>
+                  <button
+                    onClick={() => setReturnedBooksFilter('unpaid')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'unpaid'
+                        ? 'bg-golden text-dark'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    Unpaid Fines
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-light">
+                      <tr>
+                        <th className="text-left p-4 font-bold text-dark">Student</th>
+                        <th className="text-left p-4 font-bold text-dark">Book</th>
+                        <th className="text-center p-4 font-bold text-dark">Borrowed</th>
+                        <th className="text-center p-4 font-bold text-dark">Returned</th>
+                        <th className="text-center p-4 font-bold text-dark">Days Late</th>
+                        <th className="text-center p-4 font-bold text-dark">Fine</th>
+                        <th className="text-center p-4 font-bold text-dark">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {borrowRequestsLoading && (
+                        <tr>
+                          <td className="p-6 text-center text-medium" colSpan={7}>
+                            Loading returned books...
+                          </td>
+                        </tr>
+                      )}
+
+                      {!borrowRequestsLoading && borrowRequestsError && (
+                        <tr>
+                          <td className="p-6 text-center text-coral font-semibold" colSpan={7}>
+                            {borrowRequestsError}
+                          </td>
+                        </tr>
+                      )}
+
+                      {!borrowRequestsLoading &&
+                        borrowRequests
+                          .filter((r) => r.returnedAt)
+                          .filter((r) => {
+                            if (returnedBooksFilter === 'late')
+                              return (r.lateDays || 0) > 0
+                            if (returnedBooksFilter === 'ontime')
+                              return (r.lateDays || 0) === 0
+                            if (returnedBooksFilter === 'unpaid')
+                              return !r.finePaid && (r.fineLkr || 0) > 0
+                            return true
+                          })
+                          .map((request) => {
+                            const isLate = (request.lateDays || 0) > 0
+                            const hasUnpaidFine =
+                              !request.finePaid && (request.fineLkr || 0) > 0
+
+                            return (
+                              <tr key={request._id} className="hover:bg-light/50">
+                                <td className="p-4">
+                                  <p className="font-bold text-dark">
+                                    {request.user?.fullname || '—'}
+                                  </p>
+                                  <p className="text-xs text-medium">
+                                    {request.user?.email || '—'}
+                                  </p>
+                                </td>
+                                <td className="p-4 font-semibold text-dark">
+                                  {request.book?.title || '—'}
+                                </td>
+                                <td className="p-4 text-center text-medium">
+                                  {request.borrowedAt
+                                    ? new Date(request.borrowedAt).toLocaleDateString()
+                                    : '—'}
+                                </td>
+                                <td className="p-4 text-center text-medium">
+                                  {request.returnedAt
+                                    ? new Date(request.returnedAt).toLocaleDateString()
+                                    : '—'}
+                                </td>
+                                <td className="p-4 text-center">
+                                  {isLate ? (
+                                    <span className="px-3 py-1 bg-coral/10 text-coral font-bold rounded-full">
+                                      {request.lateDays || 0} days
+                                    </span>
+                                  ) : (
+                                    <span className="px-3 py-1 bg-teal/10 text-teal font-bold rounded-full">
+                                      On-Time
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div>
+                                    <p className="font-bold text-dark">
+                                      {formatLkr(request.fineLkr || 0)}
+                                    </p>
+                                    {hasUnpaidFine && (
+                                      <p className="text-xs text-coral font-semibold">
+                                        Unpaid
+                                      </p>
+                                    )}
+                                    {request.finePaid && (
+                                      <p className="text-xs text-teal font-semibold">
+                                        Paid
+                                      </p>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                      hasUnpaidFine
+                                        ? 'bg-coral/10 text-coral'
+                                        : 'bg-teal/10 text-teal'
+                                    }`}
+                                  >
+                                    {hasUnpaidFine ? 'Pending Fine' : 'Completed'}
+                                  </span>
+                                </td>
+                              </tr>
+                            )
+                          })}
+
+                      {!borrowRequestsLoading &&
+                        borrowRequests.filter((r) => r.returnedAt).length ===
+                          0 && (
+                          <tr>
+                            <td className="p-6 text-center text-medium" colSpan={7}>
+                              No returned books yet.
+                            </td>
+                          </tr>
+                        )}
                     </tbody>
                   </table>
                 </div>
@@ -1873,81 +2004,6 @@ export function AdminDashboardPage() {
                 <SendIcon size={18} />
                 Send Reply
               </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Cover Upload Modal */}
-      <AnimatePresence>
-        {showCoverUploadModal && coverUploadBook && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowCoverUploadModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="bg-teal text-white p-6 rounded-t-2xl flex items-center justify-between">
-                <h2 className="text-xl font-bold">Upload Cover Image</h2>
-                <button
-                  onClick={() => setShowCoverUploadModal(false)}
-                  className="text-white hover:text-gray-200"
-                >
-                  <XIcon size={24} />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div>
-                  <p className="font-bold text-dark mb-2">{coverUploadBook.title}</p>
-                  <p className="text-sm text-medium">{coverUploadBook.author}</p>
-                </div>
-
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-teal transition-colors cursor-pointer">
-                  <input
-                    type="file"
-                    id="coverImageInput"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => setCoverUploadFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                  <label htmlFor="coverImageInput" className="cursor-pointer block">
-                    <ImageIcon size={32} className="mx-auto mb-2 text-medium" />
-                    <p className="font-bold text-dark mb-1">
-                      {coverUploadFile ? coverUploadFile.name : 'Choose image'}
-                    </p>
-                    <p className="text-xs text-medium">JPG, PNG, or WebP (max 5MB)</p>
-                  </label>
-                </div>
-
-                <div className="flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowCoverUploadModal(false)}
-                    className="flex-1 py-2 border border-gray-300 text-dark rounded-lg font-bold hover:bg-light"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleCoverUpload}
-                    disabled={!coverUploadFile || coverUploadLoading}
-                    className="flex-1 py-2 bg-teal text-white rounded-lg font-bold disabled:opacity-50"
-                  >
-                    {coverUploadLoading ? 'Uploading...' : 'Upload'}
-                  </motion.button>
-                </div>
-              </div>
             </motion.div>
           </motion.div>
         )}
