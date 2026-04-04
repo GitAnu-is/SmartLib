@@ -283,6 +283,7 @@ export function SearchBorrowPage({ onNavigate }) {
         id: e._id,
         bookTitle: e.book?.title || '',
         coverColor: e.book?.coverColor || 'bg-teal',
+        coverImage: e.book?.coverImage || '',
         position: typeof e.position === 'number' ? e.position : 1,
       }))
       setWaitingList(normalized)
@@ -931,8 +932,8 @@ export function SearchBorrowPage({ onNavigate }) {
 
                 {filteredRequests.map((request) => (
                   <div key={request.id} className="p-6 flex items-center gap-4">
-                    <div className={`w-16 h-20 ${request.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center`}>
-                      <BookOpenIcon size={24} className="text-white/50" />
+                    <div className={`w-16 h-20 ${request.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center bg-cover bg-center overflow-hidden`} style={request.coverImage ? { backgroundImage: `url(${request.coverImage})` } : {}}>
+                      {!request.coverImage && <BookOpenIcon size={24} className="text-white/50" />}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-dark">{request.bookTitle}</h3>
@@ -1002,8 +1003,8 @@ export function SearchBorrowPage({ onNavigate }) {
                 <div className="space-y-4">
                   {waitingList.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 bg-light rounded-2xl">
-                      <div className={`w-16 h-20 ${item.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center`}>
-                        <BookOpenIcon size={24} className="text-white/50" />
+                      <div className={`w-16 h-20 ${item.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center bg-cover bg-center overflow-hidden`} style={item.coverImage ? { backgroundImage: `url(${item.coverImage})` } : {}}>
+                        {!item.coverImage && <BookOpenIcon size={24} className="text-white/50" />}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-dark">{item.bookTitle}</h3>
