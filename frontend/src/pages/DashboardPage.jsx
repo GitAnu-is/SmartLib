@@ -12,8 +12,12 @@ export function DashboardPage({ onNavigate }) {
         show: {
             opacity: 1,
             transition: {
+<<<<<<< HEAD
                 staggerChildren: 0.08,
                 delayChildren: 0.1,
+=======
+                staggerChildren: 0.1,
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
             },
         },
     }
@@ -21,11 +25,15 @@ export function DashboardPage({ onNavigate }) {
         hidden: {
             opacity: 0,
             y: 20,
+<<<<<<< HEAD
             scale: 0.95,
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
         },
         show: {
             opacity: 1,
             y: 0,
+<<<<<<< HEAD
             scale: 1,
             transition: {
                 duration: 0.4,
@@ -37,6 +45,8 @@ export function DashboardPage({ onNavigate }) {
         hover: {
             y: -4,
             boxShadow: '0 12px 24px rgba(0, 0, 0, 0.12)',
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
         },
     }
 
@@ -103,6 +113,7 @@ export function DashboardPage({ onNavigate }) {
     }
 
     return (
+<<<<<<< HEAD
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100/50 p-4 sm:p-6">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/20 rounded-full blur-3xl"></div>
@@ -147,11 +158,32 @@ export function DashboardPage({ onNavigate }) {
                     >
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <Search size={18} className="text-medium" />
+=======
+        <div className="min-h-screen bg-light p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-dark">
+                            Welcome back, {user.fullname || 'Student'}! 🎓
+                        </h1>
+                        <p className="text-medium mt-1">
+                            {myRequestsLoading
+                                ? 'Loading your library data...'
+                                : `You have ${borrowedCount} active borrows.`}
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSearchSubmit} className="relative w-full md:w-96">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Search size={20} className="text-medium" />
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                         </div>
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+<<<<<<< HEAD
                             className="block w-full pl-11 pr-12 py-2.5 bg-white border-2 border-transparent rounded-full text-base text-dark focus:ring-2 focus:ring-teal focus:border-teal transition-all outline-none shadow-sm hover:shadow-md"
                             placeholder="Search books, authors..."
                         />
@@ -169,6 +201,23 @@ export function DashboardPage({ onNavigate }) {
 
                 {myRequestsError && (
                     <div className="bg-coral/10 text-coral px-4 py-2 rounded-xl font-semibold mb-4 text-base">
+=======
+                            className="block w-full pl-11 pr-12 py-3 bg-white border border-gray-200 rounded-full text-dark focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none shadow-sm"
+                            placeholder="Search books, authors, or subjects..."
+                        />
+                        <button
+                            type="submit"
+                            aria-label="Search"
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-medium hover:text-dark"
+                        >
+                            <Search size={20} />
+                        </button>
+                    </form>
+                </div>
+
+                {myRequestsError && (
+                    <div className="bg-coral/10 text-coral px-4 py-3 rounded-2xl font-semibold mb-6">
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                         {myRequestsError}
                     </div>
                 )}
@@ -177,6 +226,7 @@ export function DashboardPage({ onNavigate }) {
                     variants={containerVariants}
                     initial="hidden"
                     animate="show"
+<<<<<<< HEAD
                     className="space-y-5"
                 >
                     {/* Main Content */}
@@ -198,6 +248,21 @@ export function DashboardPage({ onNavigate }) {
                                 >
                                     <BookOpen size={20} />
                                 </motion.div>
+=======
+                    className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                >
+                    {/* Main Content - Left Column (takes up 2 cols on lg) */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Stats Overview */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <motion.div
+                                variants={itemVariants}
+                                className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center"
+                            >
+                                <div className="w-12 h-12 bg-coral/10 text-coral rounded-full flex items-center justify-center mb-3">
+                                    <BookOpen size={24} />
+                                </div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                 <span className="text-3xl font-extrabold text-dark">
                                     {myRequestsLoading ? '—' : borrowedCount}
                                 </span>
@@ -208,6 +273,7 @@ export function DashboardPage({ onNavigate }) {
 
                             <motion.div
                                 variants={itemVariants}
+<<<<<<< HEAD
                                 whileHover={{
                                     y: -4,
                                     boxShadow: '0 12px 24px rgba(0, 128, 128, 0.2)',
@@ -221,6 +287,13 @@ export function DashboardPage({ onNavigate }) {
                                 >
                                     <Clock size={20} />
                                 </motion.div>
+=======
+                                className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center"
+                            >
+                                <div className="w-12 h-12 bg-teal/10 text-teal rounded-full flex items-center justify-center mb-3">
+                                    <Clock size={24} />
+                                </div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                 <span className="text-3xl font-extrabold text-dark">0</span>
                                 <span className="text-sm text-medium font-semibold">
                                     Overdue
@@ -229,6 +302,7 @@ export function DashboardPage({ onNavigate }) {
 
                             <motion.div
                                 variants={itemVariants}
+<<<<<<< HEAD
                                 whileHover={{
                                     y: -4,
                                     boxShadow: '0 12px 24px rgba(245, 158, 11, 0.2)',
@@ -242,6 +316,13 @@ export function DashboardPage({ onNavigate }) {
                                 >
                                     <Star size={20} />
                                 </motion.div>
+=======
+                                className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center"
+                            >
+                                <div className="w-12 h-12 bg-golden/20 text-yellow-600 rounded-full flex items-center justify-center mb-3">
+                                    <Star size={24} />
+                                </div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                 <span className="text-3xl font-extrabold text-dark">
                                     {myRequestsLoading ? '—' : avgRating.toFixed(1)}
                                 </span>
@@ -252,6 +333,7 @@ export function DashboardPage({ onNavigate }) {
 
                             <motion.div
                                 variants={itemVariants}
+<<<<<<< HEAD
                                 whileHover={{
                                     y: -4,
                                     boxShadow: '0 12px 24px rgba(220, 38, 38, 0.2)',
@@ -265,6 +347,13 @@ export function DashboardPage({ onNavigate }) {
                                 >
                                     <Heart size={20} />
                                 </motion.div>
+=======
+                                className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center"
+                            >
+                                <div className="w-12 h-12 bg-coral/10 text-coral rounded-full flex items-center justify-center mb-3">
+                                    <Heart size={24} />
+                                </div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                 <span className="text-3xl font-extrabold text-dark">0</span>
                                 <span className="text-sm text-medium font-semibold">
                                     Favorites
@@ -275,6 +364,7 @@ export function DashboardPage({ onNavigate }) {
                         {/* Currently Reading */}
                         <motion.div
                             variants={itemVariants}
+<<<<<<< HEAD
                             whileHover={{
                                 boxShadow: '0 12px 24px rgba(0, 0, 0, 0.1)',
                             }}
@@ -290,10 +380,20 @@ export function DashboardPage({ onNavigate }) {
                                     Currently Reading
                                 </h2>
                                 <motion.button
+=======
+                            className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-extrabold text-dark">
+                                    Currently Reading
+                                </h2>
+                                <button
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                     onClick={() => {
                                         localStorage.setItem('searchBorrowSection', 'requests')
                                         onNavigate?.('search-borrow')
                                     }}
+<<<<<<< HEAD
                                     whileHover={{ scale: 1.05, color: '#0d9488' }}
                                     className="text-teal font-bold text-sm hover:underline transition-colors"
                                 >
@@ -304,17 +404,33 @@ export function DashboardPage({ onNavigate }) {
                             <div className="space-y-2">
                                 {myRequestsLoading && (
                                     <div className="text-medium text-center py-5 text-base">
+=======
+                                    className="text-teal font-bold text-sm hover:underline"
+                                >
+                                    View All
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {myRequestsLoading && (
+                                    <div className="text-medium text-center py-8">
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                         Loading your books...
                                     </div>
                                 )}
 
                                 {!myRequestsLoading && currentlyReading.length === 0 && (
+<<<<<<< HEAD
                                     <div className="text-medium text-center py-5 text-base">
+=======
+                                    <div className="text-medium text-center py-8">
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                                         No active borrows yet.
                                     </div>
                                 )}
 
                                 {!myRequestsLoading &&
+<<<<<<< HEAD
                                     currentlyReading.map((r, idx) => (
                                         <motion.div
                                             key={r._id}
@@ -443,6 +559,34 @@ export function DashboardPage({ onNavigate }) {
                                 </motion.button>
                             </motion.div>
                         </div>
+=======
+                                    currentlyReading.map((r) => (
+                                        <div
+                                            key={r._id}
+                                            className="flex items-center gap-4 p-4 rounded-2xl hover:bg-light transition-colors border border-transparent hover:border-gray-100"
+                                        >
+                                            <div
+                                                className={`w-16 h-24 ${r.book?.coverColor || 'bg-teal'} rounded-lg shadow-md flex-shrink-0`}
+                                            ></div>
+                                            <div className="flex-1">
+                                                <h3 className="font-bold text-dark text-lg">
+                                                    {r.book?.title || '—'}
+                                                </h3>
+                                                <p className="text-medium text-sm">
+                                                    {r.book?.author || '—'}
+                                                </p>
+                                                <p className="text-xs text-medium mt-1">
+                                                    Borrowed: {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
+                                                </p>
+                                            </div>
+                                            <span className="px-3 py-1 bg-teal/10 text-teal text-xs font-bold rounded-full">
+                                                Approved
+                                            </span>
+                                        </div>
+                                    ))}
+                            </div>
+                        </motion.div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                     </div>
                 </motion.div>
             </div>

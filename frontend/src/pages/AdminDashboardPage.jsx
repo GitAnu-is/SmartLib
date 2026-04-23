@@ -229,7 +229,10 @@ const sidebarItems = [
   { key: 'overview', label: 'Dashboard Overview', icon: LayoutDashboardIcon },
   { key: 'books', label: 'Book Management', icon: BookOpenIcon },
   { key: 'requests', label: 'Borrow Requests', icon: ClipboardListIcon },
+<<<<<<< HEAD
   { key: 'returned', label: 'Returned Books', icon: CheckCircleIcon },
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
   { key: 'overdue', label: 'Overdue Tracking', icon: AlertTriangleIcon },
   { key: 'inquiries', label: 'Inquiry Management', icon: MessageSquareIcon },
   { key: 'reports', label: 'Reports', icon: FileTextIcon },
@@ -264,7 +267,10 @@ export function AdminDashboardPage() {
   const [borrowRequestsError, setBorrowRequestsError] = useState('')
   const [borrowRequestActionLoading, setBorrowRequestActionLoading] = useState({})
   const [overdueReminderLoading, setOverdueReminderLoading] = useState({})
+<<<<<<< HEAD
   const [returnedBooksFilter, setReturnedBooksFilter] = useState('all')
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 
   const [inquiries, setInquiries] = useState([])
   const [inquiriesLoading, setInquiriesLoading] = useState(false)
@@ -568,7 +574,11 @@ export function AdminDashboardPage() {
   }
 
   useEffect(() => {
+<<<<<<< HEAD
     if (activeSection === 'requests' || activeSection === 'overdue' || activeSection === 'returned') {
+=======
+    if (activeSection === 'requests' || activeSection === 'overdue') {
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
       loadBorrowRequests()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1393,6 +1403,7 @@ export function AdminDashboardPage() {
             </motion.div>
           )}
 
+<<<<<<< HEAD
           {/* Returned Books Section */}
           {activeSection === 'returned' && (
             <motion.div variants={containerVariants} initial="hidden" animate="show">
@@ -1583,6 +1594,8 @@ export function AdminDashboardPage() {
             </motion.div>
           )}
 
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
           {/* Inquiry Management Section */}
           {activeSection === 'inquiries' && (
             <motion.div variants={containerVariants} initial="hidden" animate="show">

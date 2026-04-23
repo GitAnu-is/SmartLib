@@ -45,11 +45,14 @@ const bookSchema = new mongoose.Schema(
       default: 'bg-teal',
       trim: true,
     },
+<<<<<<< HEAD
     coverImage: {
       type: String,
       default: '',
       trim: true,
     },
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     rating: {
       type: Number,
       default: 0,

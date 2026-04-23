@@ -23,7 +23,10 @@ import {
   cancelBorrowRequest,
   createBorrowRequest,
   fetchMyBorrowRequests,
+<<<<<<< HEAD
   returnBorrowRequest,
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 } from '../api/borrowRequests'
 import { createInquiry, fetchMyInquiries } from '../api/inquiries'
 import {
@@ -46,12 +49,15 @@ function daysBetween(dateA, dateB) {
   return Math.floor((startOfDay(dateA) - startOfDay(dateB)) / msPerDay)
 }
 
+<<<<<<< HEAD
 function computeDueAt(borrowedAt) {
   const due = new Date(borrowedAt)
   due.setDate(due.getDate() + BORROW_PERIOD_DAYS)
   return due
 }
 
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 function formatLkr(amount) {
   const value = Number(amount) || 0
   return `Rs ${value.toFixed(2)}`
@@ -85,7 +91,10 @@ export function SearchBorrowPage({ onNavigate }) {
   const [waitingListLoading, setWaitingListLoading] = useState(false)
   const [waitingListError, setWaitingListError] = useState('')
   const [waitingListActionLoading, setWaitingListActionLoading] = useState({})
+<<<<<<< HEAD
   const [returnBookActionLoading, setReturnBookActionLoading] = useState({})
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 
   const borrowedCount = useMemo(
     () => requests.filter((r) => r.status === 'approved' && !r.returnedAt).length,
@@ -170,7 +179,10 @@ export function SearchBorrowPage({ onNavigate }) {
           : '',
         status: r.status,
         coverColor: r.book?.coverColor || 'bg-teal',
+<<<<<<< HEAD
         coverImage: r.book?.coverImage || '',
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
       }))
 
       setRequests(normalized)
@@ -283,7 +295,10 @@ export function SearchBorrowPage({ onNavigate }) {
         id: e._id,
         bookTitle: e.book?.title || '',
         coverColor: e.book?.coverColor || 'bg-teal',
+<<<<<<< HEAD
         coverImage: e.book?.coverImage || '',
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
         position: typeof e.position === 'number' ? e.position : 1,
       }))
       setWaitingList(normalized)
@@ -483,6 +498,7 @@ export function SearchBorrowPage({ onNavigate }) {
     }
   }
 
+<<<<<<< HEAD
   const handleReturnBook = async (request) => {
     if (!request?.id) return
 
@@ -521,6 +537,8 @@ export function SearchBorrowPage({ onNavigate }) {
     return Math.max(0, daysBetween(today, due))
   }
 
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
   const getStatusBadge = (status) => {
     switch (status) {
       case 'available':
@@ -601,7 +619,10 @@ export function SearchBorrowPage({ onNavigate }) {
         >
           {[
             { key: 'search', label: 'Search Books', icon: SearchIcon },
+<<<<<<< HEAD
             { key: 'mybooks', label: 'My Books', icon: BookOpenIcon },
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
             { key: 'requests', label: 'My Requests', icon: ClockIcon },
             { key: 'waiting', label: 'Waiting List', icon: UsersIcon },
             { key: 'fines', label: 'Fines', icon: DollarSignIcon },
@@ -647,6 +668,7 @@ export function SearchBorrowPage({ onNavigate }) {
           )}
         </motion.div>
 
+<<<<<<< HEAD
         {/* My Books Section */}
         {activeSection === 'mybooks' && (
           <motion.div variants={containerVariants} initial="hidden" animate="show">
@@ -809,6 +831,8 @@ export function SearchBorrowPage({ onNavigate }) {
           </motion.div>
         )}
 
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
         {/* Search Section */}
         {activeSection === 'search' && (
           <motion.div variants={containerVariants} initial="hidden" animate="show">
@@ -873,8 +897,13 @@ export function SearchBorrowPage({ onNavigate }) {
                       whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
                       onClick={() => setSelectedBook({ ...book, status, rating })}
                     >
+<<<<<<< HEAD
                       <div className={`w-full h-40 ${book.coverColor || 'bg-teal'} rounded-2xl mb-4 flex items-center justify-center overflow-hidden bg-cover bg-center`} style={book.coverImage ? { backgroundImage: `url(${book.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
                         {!book.coverImage && <BookOpenIcon size={48} className="text-white/50" />}
+=======
+                      <div className={`w-full h-40 ${book.coverColor || 'bg-teal'} rounded-2xl mb-4 flex items-center justify-center`}>
+                        <BookOpenIcon size={48} className="text-white/50" />
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                       </div>
                       <div className="mb-2">{getStatusBadge(status)}</div>
                       <h3 className="font-bold text-dark text-lg mb-1 line-clamp-1">
@@ -932,8 +961,13 @@ export function SearchBorrowPage({ onNavigate }) {
 
                 {filteredRequests.map((request) => (
                   <div key={request.id} className="p-6 flex items-center gap-4">
+<<<<<<< HEAD
                     <div className={`w-16 h-20 ${request.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center bg-cover bg-center overflow-hidden`} style={request.coverImage ? { backgroundImage: `url(${request.coverImage})` } : {}}>
                       {!request.coverImage && <BookOpenIcon size={24} className="text-white/50" />}
+=======
+                    <div className={`w-16 h-20 ${request.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center`}>
+                      <BookOpenIcon size={24} className="text-white/50" />
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-dark">{request.bookTitle}</h3>
@@ -1003,8 +1037,13 @@ export function SearchBorrowPage({ onNavigate }) {
                 <div className="space-y-4">
                   {waitingList.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 bg-light rounded-2xl">
+<<<<<<< HEAD
                       <div className={`w-16 h-20 ${item.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center bg-cover bg-center overflow-hidden`} style={item.coverImage ? { backgroundImage: `url(${item.coverImage})` } : {}}>
                         {!item.coverImage && <BookOpenIcon size={24} className="text-white/50" />}
+=======
+                      <div className={`w-16 h-20 ${item.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center`}>
+                        <BookOpenIcon size={24} className="text-white/50" />
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-dark">{item.bookTitle}</h3>
@@ -1170,8 +1209,13 @@ export function SearchBorrowPage({ onNavigate }) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-start mb-6">
+<<<<<<< HEAD
                   <div className={`w-24 h-32 ${selectedBook.coverColor || 'bg-teal'} rounded-2xl flex items-center justify-center overflow-hidden bg-cover bg-center`} style={selectedBook.coverImage ? { backgroundImage: `url(${selectedBook.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
                     {!selectedBook.coverImage && <BookOpenIcon size={40} className="text-white/50" />}
+=======
+                  <div className={`w-24 h-32 ${selectedBook.coverColor || 'bg-teal'} rounded-2xl flex items-center justify-center`}>
+                    <BookOpenIcon size={40} className="text-white/50" />
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                   </div>
                   <button
                     onClick={() => setSelectedBook(null)}

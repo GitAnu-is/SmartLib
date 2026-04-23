@@ -11,8 +11,11 @@ import {
     LayoutDashboard,
     ChevronDown,
     UserCircle,
+<<<<<<< HEAD
     Mail,
     HelpCircle,
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -52,6 +55,7 @@ const navItems = [
         label: 'My Profile',
         icon: UserCircle,
     },
+<<<<<<< HEAD
     {
         key: 'contact-us',
         label: 'Contact Us',
@@ -62,6 +66,8 @@ const navItems = [
         label: 'Help Center',
         icon: HelpCircle,
     },
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 ]
 
 export function Navbar({ currentPage, onNavigate }) {
@@ -99,7 +105,11 @@ export function Navbar({ currentPage, onNavigate }) {
         .toUpperCase()
 
     const mainNavItems = navItems.slice(0, 3)
+<<<<<<< HEAD
     const moreNavItems = navItems.slice(3).filter(item => item.key !== 'profile' && (item.key !== 'admin' || isAdmin))
+=======
+    const moreNavItems = navItems.slice(3, 6).filter(item => item.key !== 'admin')
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     const mobileNavItems = isAdmin ? navItems.filter((item) => item.key !== 'admin') : navItems
 
     return (

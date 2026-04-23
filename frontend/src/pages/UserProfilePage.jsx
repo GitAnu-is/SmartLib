@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react'
+=======
+import React, { useState } from 'react'
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
@@ -16,6 +20,7 @@ import {
     CalendarIcon,
     CheckCircleIcon,
     HashIcon,
+<<<<<<< HEAD
     Phone,
     MapPin,
     GraduationCap,
@@ -25,14 +30,19 @@ import {
     EyeOff,
     Lock,
     FileText,
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 } from 'lucide-react'
 
 export function UserProfilePage() {
     const [isEditing, setIsEditing] = useState(false)
+<<<<<<< HEAD
     const [activeTab, setActiveTab] = useState('personal')
     const [showPassword, setShowPassword] = useState(false)
     const [profileCompletion, setProfileCompletion] = useState(0)
     const [uploadingPhoto, setUploadingPhoto] = useState(false)
+=======
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 
     const safeParseJson = (value, fallback) => {
         if (!value) return fallback
@@ -45,6 +55,7 @@ export function UserProfilePage() {
 
     const user = safeParseJson(localStorage.getItem('user'), {})
     const [formData, setFormData] = useState({
+<<<<<<< HEAD
         fullName: user.fullname || 'Shehara',
         email: user.email || 'surani@gmail.com',
         phone: user.phone || '+94 70 1234 567',
@@ -110,11 +121,34 @@ export function UserProfilePage() {
                 toast.error(validation.message)
                 return
             }
+=======
+        fullName: user.fullname || 'Alex Johnson',
+        email: user.email || 'alex.johnson@university.edu',
+        phone: '+1 (555) 123-4567',
+        department: 'Computer Science',
+        year: '3rd Year',
+    })
+
+    const handleSave = () => {
+        const fullName = (formData.fullName || '').trim()
+        if (!fullName) {
+            toast.error('Full name is required')
+            return
+        }
+        if (fullName.length < 3) {
+            toast.error('Full name is too short')
+            return
+        }
+        if (!/^[A-Za-z][A-Za-z\s.'-]*$/.test(fullName)) {
+            toast.error('Full name contains invalid characters')
+            return
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
         }
 
         const storedUser = safeParseJson(localStorage.getItem('user'), {})
         const nextUser = {
             ...storedUser,
+<<<<<<< HEAD
             fullname: formData.fullName,
             fullName: formData.fullName,
             phone: formData.phone,
@@ -395,22 +429,72 @@ export function UserProfilePage() {
                                     Member since {formData.joinDate}
                                 </span>
                             </div>
+=======
+            fullname: fullName,
+            fullName: fullName,
+        }
+        localStorage.setItem('user', JSON.stringify(nextUser))
+        setFormData((prev) => ({ ...prev, fullName }))
+        toast.success('Profile updated')
+        setIsEditing(false)
+    }
+
+    return (
+        <div className="min-h-screen bg-light p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Profile Header */}
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: -20,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-8"
+                >
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                        <div className="w-24 h-24 bg-teal rounded-full flex items-center justify-center text-white text-3xl font-extrabold shadow-lg shadow-teal/30 capitalize">
+                            {formData.fullName.slice(0, 2)}
+                        </div>
+
+                        <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-3 mb-2">
+                                <h1 className="text-3xl font-extrabold text-dark">{formData.fullName}</h1>
+                                <span className="px-3 py-1 bg-teal/10 text-teal text-sm font-bold rounded-full">
+                                    {formData.department}
+                                </span>
+                                <span className="px-3 py-1 bg-golden/20 text-yellow-700 text-sm font-bold rounded-full">
+                                    {formData.year}
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-4 text-medium">
+                                <span className="flex items-center gap-1.5"><MailIcon size={16} />{formData.email}</span>
+                                <span className="flex items-center gap-1.5"><CalendarIcon size={16} />Member since March 2026</span>
+                            </div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                         </div>
 
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setIsEditing(!isEditing)}
+<<<<<<< HEAD
                             className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-lg transition-all whitespace-nowrap ${
                                 isEditing
                                     ? 'bg-coral text-white hover:bg-coral/90'
                                     : 'bg-teal text-white hover:bg-teal/90'
                             }`}
+=======
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-bold shadow-lg transition-all ${isEditing ? 'bg-coral text-white' : 'bg-teal text-white'}`}
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                         >
                             <EditIcon size={18} />
                             {isEditing ? 'Cancel' : 'Edit Profile'}
                         </motion.button>
                     </div>
+<<<<<<< HEAD
 
                     {/* Profile Completion Bar */}
                     {isEditing && (
@@ -636,6 +720,43 @@ function PasswordStrengthIndicator({ password }) {
                         }`}
                     />
                 ))}
+=======
+                </motion.div>
+
+                {/* Form Information */}
+                <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-dark mb-2">Full Name</label>
+                            <input
+                                type="text"
+                                value={formData.fullName}
+                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                disabled={!isEditing}
+                                className={`w-full px-4 py-3 bg-light border border-gray-200 rounded-2xl focus:ring-2 focus:ring-teal outline-none transition-all ${!isEditing ? 'opacity-70' : ''}`}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-dark mb-2">Email</label>
+                            <input
+                                type="email"
+                                value={formData.email}
+                                disabled
+                                readOnly
+                                className="w-full px-4 py-3 bg-light border border-gray-200 rounded-2xl outline-none transition-all opacity-70 cursor-not-allowed"
+                            />
+                        </div>
+                    </div>
+                    {isEditing && (
+                        <button
+                            onClick={handleSave}
+                            className="mt-6 flex items-center gap-2 px-6 py-3 bg-teal text-white rounded-full font-bold shadow-lg"
+                        >
+                            <SaveIcon size={18} />Save Changes
+                        </button>
+                    )}
+                </div>
+>>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
             </div>
         </div>
     )
