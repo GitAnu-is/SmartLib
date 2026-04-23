@@ -55,11 +55,7 @@ const createBorrowRequest = asyncHandler(async (req, res) => {
   });
 
   const populated = await BorrowRequest.findById(request._id)
-<<<<<<< HEAD
     .populate('book', 'title author category coverColor coverImage rating')
-=======
-    .populate('book', 'title author category coverColor rating')
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     .populate('user', 'fullname email role');
 
   res.status(201).json(populated);
@@ -71,11 +67,7 @@ const createBorrowRequest = asyncHandler(async (req, res) => {
 const getMyBorrowRequests = asyncHandler(async (req, res) => {
   const requests = await BorrowRequest.find({ user: req.user._id })
     .sort({ createdAt: -1 })
-<<<<<<< HEAD
     .populate('book', 'title author category coverColor coverImage rating')
-=======
-    .populate('book', 'title author category coverColor rating')
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     .populate('user', 'fullname email role');
 
   res.status(200).json(requests);
@@ -87,11 +79,7 @@ const getMyBorrowRequests = asyncHandler(async (req, res) => {
 const getBorrowRequests = asyncHandler(async (req, res) => {
   const requests = await BorrowRequest.find({})
     .sort({ createdAt: -1 })
-<<<<<<< HEAD
     .populate('book', 'title author category coverColor coverImage rating')
-=======
-    .populate('book', 'title author category coverColor rating')
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     .populate('user', 'fullname email role');
 
   res.status(200).json(requests);
@@ -144,11 +132,7 @@ const approveBorrowRequest = asyncHandler(async (req, res) => {
   });
 
   const populated = await BorrowRequest.findById(request._id)
-<<<<<<< HEAD
     .populate('book', 'title author category coverColor coverImage')
-=======
-    .populate('book', 'title author category coverColor')
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     .populate('user', 'fullname email role');
 
   res.status(200).json(populated);
@@ -156,11 +140,7 @@ const approveBorrowRequest = asyncHandler(async (req, res) => {
 
 // @desc    Mark a borrow request as returned and compute fine
 // @route   PATCH /api/borrow-requests/:id/return
-<<<<<<< HEAD
 // @access  Private (User or Admin)
-=======
-// @access  Private/Admin
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
 const returnBorrowRequest = asyncHandler(async (req, res) => {
   const request = await BorrowRequest.findById(req.params.id)
     .populate('book')
@@ -171,15 +151,11 @@ const returnBorrowRequest = asyncHandler(async (req, res) => {
     throw new Error('Borrow request not found');
   }
 
-<<<<<<< HEAD
   // Check ownership (users can only return their own books, admins can return any)
   if (req.user.role !== 'admin' && request.user._id.toString() !== req.user._id.toString()) {
     res.status(403);
     throw new Error('You can only return your own borrow requests');
   }
-
-=======
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
   if (request.status !== 'approved') {
     res.status(400);
     throw new Error('Only approved borrow requests can be returned');
@@ -239,11 +215,7 @@ const returnBorrowRequest = asyncHandler(async (req, res) => {
   });
 
   const populated = await BorrowRequest.findById(request._id)
-<<<<<<< HEAD
     .populate('book', 'title author category coverColor coverImage rating')
-=======
-    .populate('book', 'title author category coverColor rating')
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     .populate('user', 'fullname email role');
 
   res.status(200).json(populated);
@@ -275,11 +247,7 @@ const rejectBorrowRequest = asyncHandler(async (req, res) => {
   });
 
   const populated = await BorrowRequest.findById(request._id)
-<<<<<<< HEAD
     .populate('book', 'title author category coverColor coverImage')
-=======
-    .populate('book', 'title author category coverColor')
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
     .populate('user', 'fullname email role');
 
   res.status(200).json(populated);

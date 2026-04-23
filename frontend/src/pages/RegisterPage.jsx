@@ -10,7 +10,6 @@ export function RegisterPage({ onNavigate }) {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
 
-<<<<<<< HEAD
     // Password validation function
     const validatePassword = (pwd) => {
         const validations = {
@@ -34,10 +33,6 @@ export function RegisterPage({ onNavigate }) {
             return
         }
 
-=======
-    const handleSubmit = async (e) => {
-        e.preventDefault()
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
         setLoading(true)
         try {
             const { data } = await api.post('/auth/register', { fullname, email, password })
@@ -154,7 +149,6 @@ export function RegisterPage({ onNavigate }) {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-<<<<<<< HEAD
                                         className={`block w-full pl-11 pr-4 py-3.5 bg-light border rounded-2xl text-dark focus:ring-2 focus:border-transparent transition-all outline-none ${
                                             password && !isPasswordValid
                                                 ? 'border-red-400 focus:ring-red-300'
@@ -203,18 +197,10 @@ export function RegisterPage({ onNavigate }) {
                                         </div>
                                     </div>
                                 )}
-=======
-                                        className="block w-full pl-11 pr-4 py-3.5 bg-light border border-gray-200 rounded-2xl text-dark focus:ring-2 focus:ring-teal focus:border-transparent transition-all outline-none"
-                                        autoComplete="off"
-                                        placeholder="Enter Password"
-                                    />
-                                </div>
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                             </div>
 
                             <motion.button
                                 type="submit"
-<<<<<<< HEAD
                                 disabled={loading || !isPasswordValid || !fullname || !email}
                                 whileHover={{
                                     scale: (!isPasswordValid || !fullname || !email || loading) ? 1 : 1.02,
@@ -227,16 +213,6 @@ export function RegisterPage({ onNavigate }) {
                                         ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-60'
                                         : 'bg-coral text-white hover:shadow-xl shadow-coral/30'
                                 }`}
-=======
-                                disabled={loading}
-                                whileHover={{
-                                    scale: 1.02,
-                                }}
-                                whileTap={{
-                                    scale: 0.98,
-                                }}
-                                className={`w-full bg-coral text-white font-bold py-4 rounded-full shadow-lg shadow-coral/30 hover:shadow-xl transition-all flex justify-center items-center gap-2 mt-4 ${loading ? 'opacity-70' : ''}`}
->>>>>>> c74094ce282018c28485d65b40a1d1fc8dd85ed6
                             >
                                 {loading ? 'Registering...' : 'Register'} <ArrowRight size={20} />
                             </motion.button>
