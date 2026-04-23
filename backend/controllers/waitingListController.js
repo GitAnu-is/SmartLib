@@ -37,7 +37,7 @@ const joinWaitingList = asyncHandler(async (req, res) => {
   });
 
   const populated = await WaitingList.findById(entry._id)
-    .populate('book', 'title author category coverColor')
+    .populate('book', 'title author category coverColor coverImage')
     .populate('user', 'fullname email role');
 
   res.status(201).json(populated);
@@ -49,7 +49,7 @@ const joinWaitingList = asyncHandler(async (req, res) => {
 const getMyWaitingList = asyncHandler(async (req, res) => {
   const entries = await WaitingList.find({ user: req.user._id, status: 'active' })
     .sort({ createdAt: -1 })
-    .populate('book', 'title author category coverColor')
+    .populate('book', 'title author category coverColor coverImage')
     .populate('user', 'fullname email role');
 
   // compute position per book (count older active entries)

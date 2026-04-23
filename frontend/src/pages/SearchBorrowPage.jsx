@@ -23,6 +23,7 @@ import {
   cancelBorrowRequest,
   createBorrowRequest,
   fetchMyBorrowRequests,
+  returnBorrowRequest,
 } from '../api/borrowRequests'
 import { createInquiry, fetchMyInquiries } from '../api/inquiries'
 import {
@@ -43,6 +44,12 @@ function startOfDay(date) {
 function daysBetween(dateA, dateB) {
   const msPerDay = 24 * 60 * 60 * 1000
   return Math.floor((startOfDay(dateA) - startOfDay(dateB)) / msPerDay)
+}
+
+function computeDueAt(borrowedAt) {
+  const due = new Date(borrowedAt)
+  due.setDate(due.getDate() + BORROW_PERIOD_DAYS)
+  return due
 }
 
 function formatLkr(amount) {
@@ -78,6 +85,7 @@ export function SearchBorrowPage({ onNavigate }) {
   const [waitingListLoading, setWaitingListLoading] = useState(false)
   const [waitingListError, setWaitingListError] = useState('')
   const [waitingListActionLoading, setWaitingListActionLoading] = useState({})
+  const [returnBookActionLoading, setReturnBookActionLoading] = useState({})
 
   const borrowedCount = useMemo(
     () => requests.filter((r) => r.status === 'approved' && !r.returnedAt).length,
@@ -162,6 +170,7 @@ export function SearchBorrowPage({ onNavigate }) {
           : '',
         status: r.status,
         coverColor: r.book?.coverColor || 'bg-teal',
+        coverImage: r.book?.coverImage || '',
       }))
 
       setRequests(normalized)
@@ -274,6 +283,7 @@ export function SearchBorrowPage({ onNavigate }) {
         id: e._id,
         bookTitle: e.book?.title || '',
         coverColor: e.book?.coverColor || 'bg-teal',
+        coverImage: e.book?.coverImage || '',
         position: typeof e.position === 'number' ? e.position : 1,
       }))
       setWaitingList(normalized)
@@ -473,6 +483,44 @@ export function SearchBorrowPage({ onNavigate }) {
     }
   }
 
+  const handleReturnBook = async (request) => {
+    if (!request?.id) return
+
+    const ok = window.confirm(
+      `Are you sure you want to return "${request.bookTitle}"?`
+    )
+    if (!ok) return
+
+    setReturnBookActionLoading((prev) => ({
+      ...prev,
+      [request.id]: true,
+    }))
+    try {
+      await returnBorrowRequest(request.id)
+      await loadMyRequests()
+      toast.success('Book returned successfully! Thank you.')
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to return book')
+    } finally {
+      setReturnBookActionLoading((prev) => ({
+        ...prev,
+        [request.id]: false,
+      }))
+    }
+  }
+
+  const borrowedBooks = useMemo(
+    () => requests.filter((r) => r.status === 'approved' && !r.returnedAt),
+    [requests]
+  )
+
+  const getOverdueDays = (dueAt) => {
+    if (!dueAt) return 0
+    const today = new Date()
+    const due = new Date(dueAt)
+    return Math.max(0, daysBetween(today, due))
+  }
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'available':
@@ -553,6 +601,7 @@ export function SearchBorrowPage({ onNavigate }) {
         >
           {[
             { key: 'search', label: 'Search Books', icon: SearchIcon },
+            { key: 'mybooks', label: 'My Books', icon: BookOpenIcon },
             { key: 'requests', label: 'My Requests', icon: ClockIcon },
             { key: 'waiting', label: 'Waiting List', icon: UsersIcon },
             { key: 'fines', label: 'Fines', icon: DollarSignIcon },
@@ -597,6 +646,168 @@ export function SearchBorrowPage({ onNavigate }) {
             </p>
           )}
         </motion.div>
+
+        {/* My Books Section */}
+        {activeSection === 'mybooks' && (
+          <motion.div variants={containerVariants} initial="hidden" animate="show">
+            <motion.div variants={itemVariants} className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <BookOpenIcon size={28} className="text-teal" />
+                <h2 className="text-2xl font-extrabold text-dark">My Borrowed Books</h2>
+              </div>
+
+              {requestsError && (
+                <div className="bg-coral/10 text-coral px-4 py-3 rounded-2xl font-semibold mb-4">
+                  {requestsError}
+                </div>
+              )}
+
+              {requestsLoading ? (
+                <p className="text-medium text-center py-8">Loading your books...</p>
+              ) : borrowedBooks.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpenIcon size={48} className="text-medium/30 mx-auto mb-4" />
+                  <p className="text-medium">You haven't borrowed any books yet.</p>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setActiveSection('search')}
+                    className="mt-4 px-6 py-2.5 bg-teal text-white rounded-full font-bold"
+                  >
+                    Browse Books
+                  </motion.button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {borrowedBooks.map((book) => {
+                    const overdueDays = book.dueAt
+                      ? daysBetween(new Date(), new Date(book.dueAt))
+                      : 0
+                    const isOverdue = overdueDays > 0
+                    const borrowedDate = book.borrowedAt
+                      ? new Date(book.borrowedAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: '2-digit',
+                        })
+                      : 'N/A'
+                    const dueDate = book.dueAt
+                      ? new Date(book.dueAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: '2-digit',
+                        })
+                      : 'N/A'
+
+                    return (
+                      <motion.div
+                        key={book.id}
+                        whileHover={{ y: -4 }}
+                        className={`rounded-3xl p-6 border ${
+                          isOverdue
+                            ? 'bg-coral/5 border-coral/30'
+                            : 'bg-white border-gray-200'
+                        } shadow-sm`}
+                      >
+                        {/* Book Cover */}
+                        <div className={`w-full h-40 ${book.coverColor || 'bg-teal'} rounded-2xl mb-4 flex items-center justify-center overflow-hidden bg-cover bg-center`} style={book.coverImage ? { backgroundImage: `url(${book.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+                          {!book.coverImage && <BookOpenIcon size={48} className="text-white/50" />}
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="px-3 py-1 bg-teal/10 text-teal text-xs font-bold rounded-full">
+                            Currently Borrowed
+                          </span>
+                          {isOverdue && (
+                            <span className="px-3 py-1 bg-coral/20 text-coral text-xs font-bold rounded-full flex items-center gap-1">
+                              <AlertTriangleIcon size={12} />
+                              Overdue
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Book Title and Author */}
+                        <h3 className="font-bold text-dark text-lg mb-1 line-clamp-2">
+                          {book.bookTitle}
+                        </h3>
+                        <p className="text-medium text-sm mb-4">{book.bookAuthor}</p>
+
+                        {/* Dates */}
+                        <div className="space-y-2 mb-4 text-sm">
+                          <div className="flex items-center justify-between text-medium">
+                            <span>Borrowed:</span>
+                            <span className="font-bold text-dark">{borrowedDate}</span>
+                          </div>
+                          <div className={`flex items-center justify-between ${
+                            isOverdue ? 'text-coral' : 'text-medium'
+                          }`}>
+                            <span>Due:</span>
+                            <span className={`font-bold ${
+                              isOverdue ? 'text-coral' : 'text-dark'
+                            }`}>
+                              {dueDate}
+                            </span>
+                          </div>
+                          {isOverdue && (
+                            <div className="flex items-center justify-between text-coral bg-coral/10 px-3 py-2 rounded-xl">
+                              <span className="font-bold">Days Overdue:</span>
+                              <span className="font-extrabold">{overdueDays} days</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Time Remaining Bar */}
+                        {!isOverdue && (
+                          <div className="mb-4">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-bold text-medium">Time Remaining</span>
+                              <span className="text-xs font-bold text-teal">{-overdueDays} days</span>
+                            </div>
+                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.max(0, Math.min(100, (-overdueDays / BORROW_PERIOD_DAYS) * 100))}%` }}
+                                className="h-full bg-teal"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Return Button */}
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleReturnBook(book)}
+                          disabled={!!returnBookActionLoading[book.id]}
+                          className={`w-full py-3 rounded-full font-bold text-white transition-all ${
+                            isOverdue
+                              ? 'bg-coral hover:bg-coral/90'
+                              : 'bg-teal hover:bg-teal/90'
+                          } disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+                        >
+                          <CheckCircleIcon size={16} />
+                          Return Book
+                        </motion.button>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {borrowedBooks.length > 0 && (
+                <div className="mt-8 p-6 bg-teal/5 border border-teal/20 rounded-2xl">
+                  <p className="text-sm text-dark">
+                    <span className="font-bold">📚 Borrow Period:</span> {BORROW_PERIOD_DAYS} days from the approval date
+                  </p>
+                  <p className="text-sm text-dark mt-2">
+                    <span className="font-bold">💰 Late Fine:</span> Rs {FINE_PER_DAY_LKR} per day after due date
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
 
         {/* Search Section */}
         {activeSection === 'search' && (
@@ -662,8 +873,8 @@ export function SearchBorrowPage({ onNavigate }) {
                       whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
                       onClick={() => setSelectedBook({ ...book, status, rating })}
                     >
-                      <div className={`w-full h-40 ${book.coverColor || 'bg-teal'} rounded-2xl mb-4 flex items-center justify-center`}>
-                        <BookOpenIcon size={48} className="text-white/50" />
+                      <div className={`w-full h-40 ${book.coverColor || 'bg-teal'} rounded-2xl mb-4 flex items-center justify-center overflow-hidden bg-cover bg-center`} style={book.coverImage ? { backgroundImage: `url(${book.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+                        {!book.coverImage && <BookOpenIcon size={48} className="text-white/50" />}
                       </div>
                       <div className="mb-2">{getStatusBadge(status)}</div>
                       <h3 className="font-bold text-dark text-lg mb-1 line-clamp-1">
@@ -721,8 +932,8 @@ export function SearchBorrowPage({ onNavigate }) {
 
                 {filteredRequests.map((request) => (
                   <div key={request.id} className="p-6 flex items-center gap-4">
-                    <div className={`w-16 h-20 ${request.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center`}>
-                      <BookOpenIcon size={24} className="text-white/50" />
+                    <div className={`w-16 h-20 ${request.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center bg-cover bg-center overflow-hidden`} style={request.coverImage ? { backgroundImage: `url(${request.coverImage})` } : {}}>
+                      {!request.coverImage && <BookOpenIcon size={24} className="text-white/50" />}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-dark">{request.bookTitle}</h3>
@@ -792,8 +1003,8 @@ export function SearchBorrowPage({ onNavigate }) {
                 <div className="space-y-4">
                   {waitingList.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 bg-light rounded-2xl">
-                      <div className={`w-16 h-20 ${item.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center`}>
-                        <BookOpenIcon size={24} className="text-white/50" />
+                      <div className={`w-16 h-20 ${item.coverColor} rounded-xl flex-shrink-0 flex items-center justify-center bg-cover bg-center overflow-hidden`} style={item.coverImage ? { backgroundImage: `url(${item.coverImage})` } : {}}>
+                        {!item.coverImage && <BookOpenIcon size={24} className="text-white/50" />}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-dark">{item.bookTitle}</h3>
@@ -959,8 +1170,8 @@ export function SearchBorrowPage({ onNavigate }) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-start mb-6">
-                  <div className={`w-24 h-32 ${selectedBook.coverColor || 'bg-teal'} rounded-2xl flex items-center justify-center`}>
-                    <BookOpenIcon size={40} className="text-white/50" />
+                  <div className={`w-24 h-32 ${selectedBook.coverColor || 'bg-teal'} rounded-2xl flex items-center justify-center overflow-hidden bg-cover bg-center`} style={selectedBook.coverImage ? { backgroundImage: `url(${selectedBook.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
+                    {!selectedBook.coverImage && <BookOpenIcon size={40} className="text-white/50" />}
                   </div>
                   <button
                     onClick={() => setSelectedBook(null)}

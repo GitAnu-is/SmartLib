@@ -229,6 +229,7 @@ const sidebarItems = [
   { key: 'overview', label: 'Dashboard Overview', icon: LayoutDashboardIcon },
   { key: 'books', label: 'Book Management', icon: BookOpenIcon },
   { key: 'requests', label: 'Borrow Requests', icon: ClipboardListIcon },
+  { key: 'returned', label: 'Returned Books', icon: CheckCircleIcon },
   { key: 'overdue', label: 'Overdue Tracking', icon: AlertTriangleIcon },
   { key: 'inquiries', label: 'Inquiry Management', icon: MessageSquareIcon },
   { key: 'reports', label: 'Reports', icon: FileTextIcon },
@@ -263,6 +264,7 @@ export function AdminDashboardPage() {
   const [borrowRequestsError, setBorrowRequestsError] = useState('')
   const [borrowRequestActionLoading, setBorrowRequestActionLoading] = useState({})
   const [overdueReminderLoading, setOverdueReminderLoading] = useState({})
+  const [returnedBooksFilter, setReturnedBooksFilter] = useState('all')
 
   const [inquiries, setInquiries] = useState([])
   const [inquiriesLoading, setInquiriesLoading] = useState(false)
@@ -570,7 +572,7 @@ export function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    if (activeSection === 'requests' || activeSection === 'overdue') {
+    if (activeSection === 'requests' || activeSection === 'overdue' || activeSection === 'returned') {
       loadBorrowRequests()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1391,6 +1393,196 @@ export function AdminDashboardPage() {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Returned Books Section */}
+          {activeSection === 'returned' && (
+            <motion.div variants={containerVariants} initial="hidden" animate="show">
+              <motion.div
+                variants={itemVariants}
+                className="flex justify-between items-center mb-8"
+              >
+                <div>
+                  <h1 className="text-3xl font-extrabold text-dark mb-2">
+                    Returned Books ✅
+                  </h1>
+                  <p className="text-medium">
+                    View all returned books with complete return details and fine information.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex gap-4 flex-wrap">
+                  <button
+                    onClick={() => setReturnedBooksFilter('all')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'all'
+                        ? 'bg-teal text-white'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    All Returns
+                  </button>
+                  <button
+                    onClick={() => setReturnedBooksFilter('late')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'late'
+                        ? 'bg-coral text-white'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    Late Returns
+                  </button>
+                  <button
+                    onClick={() => setReturnedBooksFilter('ontime')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'ontime'
+                        ? 'bg-teal text-white'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    On-Time Returns
+                  </button>
+                  <button
+                    onClick={() => setReturnedBooksFilter('unpaid')}
+                    className={`px-4 py-2 rounded-full font-bold transition-all ${
+                      returnedBooksFilter === 'unpaid'
+                        ? 'bg-golden text-dark'
+                        : 'bg-light text-medium hover:text-dark'
+                    }`}
+                  >
+                    Unpaid Fines
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-light">
+                      <tr>
+                        <th className="text-left p-4 font-bold text-dark">Student</th>
+                        <th className="text-left p-4 font-bold text-dark">Book</th>
+                        <th className="text-center p-4 font-bold text-dark">Borrowed</th>
+                        <th className="text-center p-4 font-bold text-dark">Returned</th>
+                        <th className="text-center p-4 font-bold text-dark">Days Late</th>
+                        <th className="text-center p-4 font-bold text-dark">Fine</th>
+                        <th className="text-center p-4 font-bold text-dark">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {borrowRequestsLoading && (
+                        <tr>
+                          <td className="p-6 text-center text-medium" colSpan={7}>
+                            Loading returned books...
+                          </td>
+                        </tr>
+                      )}
+
+                      {!borrowRequestsLoading && borrowRequestsError && (
+                        <tr>
+                          <td className="p-6 text-center text-coral font-semibold" colSpan={7}>
+                            {borrowRequestsError}
+                          </td>
+                        </tr>
+                      )}
+
+                      {!borrowRequestsLoading &&
+                        borrowRequests
+                          .filter((r) => r.returnedAt)
+                          .filter((r) => {
+                            if (returnedBooksFilter === 'late')
+                              return (r.lateDays || 0) > 0
+                            if (returnedBooksFilter === 'ontime')
+                              return (r.lateDays || 0) === 0
+                            if (returnedBooksFilter === 'unpaid')
+                              return !r.finePaid && (r.fineLkr || 0) > 0
+                            return true
+                          })
+                          .map((request) => {
+                            const isLate = (request.lateDays || 0) > 0
+                            const hasUnpaidFine =
+                              !request.finePaid && (request.fineLkr || 0) > 0
+
+                            return (
+                              <tr key={request._id} className="hover:bg-light/50">
+                                <td className="p-4">
+                                  <p className="font-bold text-dark">
+                                    {request.user?.fullname || '—'}
+                                  </p>
+                                  <p className="text-xs text-medium">
+                                    {request.user?.email || '—'}
+                                  </p>
+                                </td>
+                                <td className="p-4 font-semibold text-dark">
+                                  {request.book?.title || '—'}
+                                </td>
+                                <td className="p-4 text-center text-medium">
+                                  {request.borrowedAt
+                                    ? new Date(request.borrowedAt).toLocaleDateString()
+                                    : '—'}
+                                </td>
+                                <td className="p-4 text-center text-medium">
+                                  {request.returnedAt
+                                    ? new Date(request.returnedAt).toLocaleDateString()
+                                    : '—'}
+                                </td>
+                                <td className="p-4 text-center">
+                                  {isLate ? (
+                                    <span className="px-3 py-1 bg-coral/10 text-coral font-bold rounded-full">
+                                      {request.lateDays || 0} days
+                                    </span>
+                                  ) : (
+                                    <span className="px-3 py-1 bg-teal/10 text-teal font-bold rounded-full">
+                                      On-Time
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div>
+                                    <p className="font-bold text-dark">
+                                      {formatLkr(request.fineLkr || 0)}
+                                    </p>
+                                    {hasUnpaidFine && (
+                                      <p className="text-xs text-coral font-semibold">
+                                        Unpaid
+                                      </p>
+                                    )}
+                                    {request.finePaid && (
+                                      <p className="text-xs text-teal font-semibold">
+                                        Paid
+                                      </p>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-4 text-center">
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                      hasUnpaidFine
+                                        ? 'bg-coral/10 text-coral'
+                                        : 'bg-teal/10 text-teal'
+                                    }`}
+                                  >
+                                    {hasUnpaidFine ? 'Pending Fine' : 'Completed'}
+                                  </span>
+                                </td>
+                              </tr>
+                            )
+                          })}
+
+                      {!borrowRequestsLoading &&
+                        borrowRequests.filter((r) => r.returnedAt).length ===
+                          0 && (
+                          <tr>
+                            <td className="p-6 text-center text-medium" colSpan={7}>
+                              No returned books yet.
+                            </td>
+                          </tr>
+                        )}
                     </tbody>
                   </table>
                 </div>
