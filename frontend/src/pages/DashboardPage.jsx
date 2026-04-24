@@ -324,9 +324,17 @@ export function DashboardPage({ onNavigate }) {
                                             whileHover={{ x: 4, backgroundColor: 'rgba(0, 128, 128, 0.05)' }}
                                             className="flex items-center gap-3 p-3 rounded-lg border border-transparent hover:border-teal/20 transition-all"
                                         >
-                                            <div
-                                                className={`w-12 h-16 ${r.book?.coverColor || 'bg-teal'} rounded-md shadow-sm flex-shrink-0`}
-                                            ></div>
+                                            {r.book?.coverImage ? (
+                                                <img
+                                                    src={r.book.coverImage}
+                                                    alt={r.book?.title}
+                                                    className="w-12 h-16 rounded-md shadow-sm flex-shrink-0 object-cover"
+                                                />
+                                            ) : (
+                                                <div
+                                                    className={`w-12 h-16 ${r.book?.coverColor || 'bg-teal'} rounded-md shadow-sm flex-shrink-0`}
+                                                ></div>
+                                            )}
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="font-bold text-dark text-base truncate">
                                                     {r.book?.title || '—'}

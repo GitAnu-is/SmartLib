@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Send, Clock, Globe } from 'lucide-react'
+import { Mail, Phone, MapPin, Send, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { submitContactMessage } from '../api/contact'
 
 export function ContactUsPage({ onNavigate }) {
     const [formData, setFormData] = useState({
@@ -11,26 +12,77 @@ export function ContactUsPage({ onNavigate }) {
         message: '',
     })
     const [loading, setLoading] = useState(false)
+    const [errors, setErrors] = useState({})
 
     const handleChange = (e) => {
+        const { name, value } = e.target
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value,
+            [name]: value,
         })
+        // Clear error for this field
+        if (errors[name]) {
+            setErrors({ ...errors, [name]: '' })
+        }
+    }
+
+    const validateForm = () => {
+        const newErrors = {}
+
+        if (!formData.name.trim()) {
+            newErrors.name = 'Name is required'
+        } else if (formData.name.trim().length < 2) {
+            newErrors.name = 'Name must be at least 2 characters'
+        }
+
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required'
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            newErrors.email = 'Please enter a valid email'
+        }
+
+        if (!formData.subject.trim()) {
+            newErrors.subject = 'Subject is required'
+        } else if (formData.subject.trim().length < 3) {
+            newErrors.subject = 'Subject must be at least 3 characters'
+        }
+
+        if (!formData.message.trim()) {
+            newErrors.message = 'Message is required'
+        } else if (formData.message.trim().length < 10) {
+            newErrors.message = 'Message must be at least 10 characters'
+        }
+
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-            toast.error('Please fill all fields')
+
+        if (!validateForm()) {
+            toast.error('Please fix the errors in the form')
             return
         }
+
         setLoading(true)
-        setTimeout(() => {
-            toast.success('Message sent successfully! We will contact you soon.')
+        try {
+            const response = await submitContactMessage({
+                name: formData.name.trim(),
+                email: formData.email.trim(),
+                subject: formData.subject.trim(),
+                message: formData.message.trim(),
+            })
+
+            toast.success(response.message || 'Message sent successfully!')
             setFormData({ name: '', email: '', subject: '', message: '' })
+            setErrors({})
+        } catch (error) {
+            const errorMsg = error?.response?.data?.message || 'Failed to send message. Please try again.'
+            toast.error(errorMsg)
+        } finally {
             setLoading(false)
-        }, 1500)
+        }
     }
 
     const containerVariants = {
@@ -163,9 +215,12 @@ export function ContactUsPage({ onNavigate }) {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all"
+                                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all ${
+                                            errors.name ? 'border-coral' : 'border-gray-200'
+                                        }`}
                                         placeholder="Your name"
                                     />
+                                    {errors.name && <p className="text-coral text-xs mt-1">{errors.name}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-dark mb-2">Email *</label>
@@ -174,9 +229,12 @@ export function ContactUsPage({ onNavigate }) {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all"
+                                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all ${
+                                            errors.email ? 'border-coral' : 'border-gray-200'
+                                        }`}
                                         placeholder="your@email.com"
                                     />
+                                    {errors.email && <p className="text-coral text-xs mt-1">{errors.email}</p>}
                                 </div>
                             </div>
 
@@ -187,9 +245,12 @@ export function ContactUsPage({ onNavigate }) {
                                     name="subject"
                                     value={formData.subject}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all"
+                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all ${
+                                        errors.subject ? 'border-coral' : 'border-gray-200'
+                                    }`}
                                     placeholder="What is this about?"
                                 />
+                                {errors.subject && <p className="text-coral text-xs mt-1">{errors.subject}</p>}
                             </div>
 
                             <div>
@@ -199,9 +260,13 @@ export function ContactUsPage({ onNavigate }) {
                                     value={formData.message}
                                     onChange={handleChange}
                                     rows="6"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all resize-none"
+                                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal focus:border-transparent outline-none transition-all resize-none ${
+                                        errors.message ? 'border-coral' : 'border-gray-200'
+                                    }`}
                                     placeholder="Your message..."
                                 ></textarea>
+                                {errors.message && <p className="text-coral text-xs mt-1">{errors.message}</p>}
+                                <p className="text-xs text-medium mt-1">{formData.message.length}/500 characters</p>
                             </div>
 
                             <motion.button
@@ -209,7 +274,7 @@ export function ContactUsPage({ onNavigate }) {
                                 disabled={loading}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="w-full bg-gradient-to-r from-teal to-cyan text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                                className="w-full bg-gradient-to-r from-teal to-cyan text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 <Send size={20} />
                                 {loading ? 'Sending...' : 'Send Message'}
@@ -221,3 +286,4 @@ export function ContactUsPage({ onNavigate }) {
         </div>
     )
 }
+
