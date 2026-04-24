@@ -2,11 +2,14 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-    const { fullname, email, password, role } = req.body;
+    const { fullname, password, role } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     // Basic validation (should be improved)
     if (!fullname || !email || !password) {
@@ -48,7 +51,8 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password } = req.body;
 
     // Find user by email (include password as it was hidden)
     const user = await User.findOne({ email }).select('+password');

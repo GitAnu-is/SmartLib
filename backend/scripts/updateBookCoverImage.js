@@ -23,7 +23,8 @@ const bookCovers = {
 
 async function updateBookCoverImages() {
   try {
-    const connection = await mongoose.connect(process.env.MONGODB_URI);
+    const dbName = process.env.MONGODB_DB_NAME || 'SmartLib';
+    const connection = await mongoose.connect(process.env.MONGODB_URI, { dbName });
     console.log('MongoDB connected successfully');
 
     // Update each book with its cover image
