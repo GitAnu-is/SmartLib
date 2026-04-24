@@ -43,6 +43,38 @@ function getTransporter() {
   return cachedTransporter;
 }
 
+function isAuthError(err) {
+  const code = err?.code;
+  const responseCode = err?.responseCode;
+  const msg = String(err?.message || err?.response || '').toLowerCase();
+  return (
+    code === 'EAUTH' ||
+    responseCode === 535 ||
+    msg.includes('badcredentials') ||
+    msg.includes('username and password not accepted') ||
+    msg.includes('authentication failed')
+  );
+}
+
+function buildFriendlySmtpError(err) {
+  const host = process.env.SMTP_HOST;
+
+  if (isAuthError(err)) {
+    const isGmail = String(host || '').toLowerCase().includes('gmail');
+    if (isGmail) {
+      return new Error(
+        'Email login failed (SMTP authentication error). If you are using Gmail, you must enable 2-Step Verification and generate a Gmail App Password, then set SMTP_USER to your Gmail address and SMTP_PASS to the 16-character app password. Restart the backend after changing .env.'
+      );
+    }
+
+    return new Error(
+      'Email login failed (SMTP authentication error). Check SMTP_USER/SMTP_PASS (and that your provider allows SMTP access). Restart the backend after changing .env.'
+    );
+  }
+
+  return err;
+}
+
 async function sendMail({ to, subject, text, html }) {
   const from = (process.env.SMTP_FROM || process.env.SMTP_USER || '').trim();
   if (!from) {
@@ -53,13 +85,17 @@ async function sendMail({ to, subject, text, html }) {
   }
 
   const transporter = getTransporter();
-  return transporter.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  });
+  try {
+    return await transporter.sendMail({
+      from,
+      to,
+      subject,
+      text,
+      html,
+    });
+  } catch (err) {
+    throw buildFriendlySmtpError(err);
+  }
 }
 
 module.exports = { sendMail };

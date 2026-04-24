@@ -514,6 +514,7 @@ export function AdminDashboardPage() {
       setBorrowRequests((prev) =>
         prev.map((r) => (r._id === request._id ? updated : r))
       )
+      void loadActivityLog()
     } catch (e) {
       setBorrowRequestsError(
         e?.response?.data?.message || 'Failed to approve request'
@@ -532,6 +533,7 @@ export function AdminDashboardPage() {
       setBorrowRequests((prev) =>
         prev.map((r) => (r._id === request._id ? updated : r))
       )
+      void loadActivityLog()
     } catch (e) {
       setBorrowRequestsError(
         e?.response?.data?.message || 'Failed to reject request'
@@ -550,6 +552,7 @@ export function AdminDashboardPage() {
       setBorrowRequests((prev) =>
         prev.map((r) => (r._id === request._id ? updated : r))
       )
+      void loadActivityLog()
     } catch (e) {
       setBorrowRequestsError(
         e?.response?.data?.message || 'Failed to mark as returned'
@@ -566,6 +569,7 @@ export function AdminDashboardPage() {
     try {
       const result = await sendOverdueReminder(item.id)
       toast.success(result?.to ? `Reminder sent to ${result.to}` : 'Reminder email sent')
+      void loadActivityLog()
     } catch (e) {
       toast.error(e?.response?.data?.message || 'Failed to send reminder')
     } finally {
@@ -822,6 +826,7 @@ export function AdminDashboardPage() {
       setInquiries((prev) => prev.map((i) => (i.id === normalized.id ? normalized : i)))
       setShowReplyModal(null)
       setReplyMessage('')
+      void loadActivityLog()
     } catch (e) {
       setInquiriesError(e?.response?.data?.message || 'Failed to send reply')
     } finally {
@@ -903,6 +908,7 @@ export function AdminDashboardPage() {
       setShowAddBookModal(false)
       setEditingBook(null)
       await loadBooks()
+      void loadActivityLog()
     } catch (e) {
       setBooksError(e?.response?.data?.message || 'Failed to save book')
     }
@@ -912,6 +918,7 @@ export function AdminDashboardPage() {
     try {
       await apiDeleteBook(book._id)
       await loadBooks()
+      void loadActivityLog()
     } catch (e) {
       setBooksError(e?.response?.data?.message || 'Failed to delete book')
     }
