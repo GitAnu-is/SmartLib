@@ -1,9 +1,28 @@
 const mongoose = require('mongoose');
 
+const resolveDbName = (mongoUri) => {
+  if (process.env.MONGODB_DB_NAME) {
+    return process.env.MONGODB_DB_NAME.trim();
+  }
+
+  try {
+    const parsed = new URL(mongoUri);
+    return parsed.pathname.replace(/^\//, '').trim() || undefined;
+  } catch (error) {
+    return undefined;
+  }
+};
+
 const connectDB = async () => {
   const mongoUri = process.env.MONGODB_URI;
   if (!mongoUri) {
     console.error('Error: MONGODB_URI is not set');
+    process.exit(1);
+  }
+
+  const dbName = resolveDbName(mongoUri);
+  if (!dbName) {
+    console.error('Error: Could not determine MongoDB database name');
     process.exit(1);
   }
 
@@ -12,8 +31,8 @@ const connectDB = async () => {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const conn = await mongoose.connect(mongoUri);
-      console.log(`MongoDB Connected: ${conn.connection.host}`);
+      const conn = await mongoose.connect(mongoUri, { dbName });
+      console.log(`MongoDB Connected: ${conn.connection.host} / ${conn.connection.name}`);
       return;
     } catch (error) {
       const message = error?.message || String(error);
