@@ -7,6 +7,8 @@ const pickCoverColor = () => {
   return colors[Math.floor(Math.random() * colors.length)];
 };
 
+const normalizeCoverImage = (value) => String(value || '').trim();
+
 const normalizeStatus = ({ status, copies }) => {
   if (status) return status;
   if (typeof copies === 'number' && copies <= 0) return 'borrowed';
@@ -60,6 +62,7 @@ const createBook = asyncHandler(async (req, res) => {
     totalCopies,
     copies,
     coverColor,
+    coverImage,
     rating,
     status,
   } = req.body;
@@ -94,6 +97,7 @@ const createBook = asyncHandler(async (req, res) => {
     totalCopies: parsedTotalCopies,
     copies: parsedCopies,
     coverColor: coverColor || pickCoverColor(),
+    coverImage: normalizeCoverImage(coverImage),
     rating: rating === undefined ? 0 : Number(rating),
     status: normalizeStatus({ status, copies: parsedCopies }),
     createdBy: req.user?._id,
@@ -137,6 +141,10 @@ const updateBook = asyncHandler(async (req, res) => {
       throw new Error('copies must be a non-negative number');
     }
     updates.copies = parsedCopies;
+  }
+
+  if (updates.coverImage !== undefined) {
+    updates.coverImage = normalizeCoverImage(updates.coverImage);
   }
 
   const nextTotal = updates.totalCopies !== undefined ? updates.totalCopies : book.totalCopies;
