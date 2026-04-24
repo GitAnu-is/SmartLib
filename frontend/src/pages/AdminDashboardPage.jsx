@@ -29,6 +29,7 @@ import {
   createBook as apiCreateBook,
   updateBook as apiUpdateBook,
   deleteBook as apiDeleteBook,
+  resolveBookCoverUrl,
 } from '../api/books'
 import BookCoverImage from '../components/BookCoverImage'
 
@@ -290,6 +291,7 @@ export function AdminDashboardPage() {
   const [bookAuthor, setBookAuthor] = useState('')
   const [bookCategory, setBookCategory] = useState('Design')
   const [bookCoverImage, setBookCoverImage] = useState('')
+  const [bookCoverFile, setBookCoverFile] = useState(null)
   const [bookTotalCopies, setBookTotalCopies] = useState(1)
   const [bookFormErrors, setBookFormErrors] = useState({})
 
@@ -841,6 +843,7 @@ export function AdminDashboardPage() {
     setBookAuthor('')
     setBookCategory('Design')
     setBookCoverImage('')
+    setBookCoverFile(null)
     setBookTotalCopies(1)
     setBookFormErrors({})
   }
@@ -857,6 +860,7 @@ export function AdminDashboardPage() {
     setBookAuthor(book?.author || '')
     setBookCategory(book?.category || 'Design')
     setBookCoverImage(book?.coverImage || '')
+    setBookCoverFile(null)
     setBookTotalCopies(
       typeof book?.totalCopies === 'number' ? book.totalCopies : 1
     )
@@ -868,7 +872,6 @@ export function AdminDashboardPage() {
     const title = bookTitle.trim()
     const author = bookAuthor.trim()
     const category = String(bookCategory || '').trim()
-    const coverImage = String(bookCoverImage || '').trim()
     const totalCopies = Number(bookTotalCopies)
 
     const errors = {}
@@ -880,13 +883,6 @@ export function AdminDashboardPage() {
     }
     if (author && /[^A-Za-z\s]/.test(author)) {
       errors.author = 'Author cannot contain numbers or symbols'
-    }
-    if (
-      coverImage &&
-      !/^https?:\/\/.+/i.test(coverImage) &&
-      !/^data:image\//i.test(coverImage)
-    ) {
-      errors.coverImage = 'Image must be a valid URL'
     }
     if (Number.isNaN(totalCopies)) {
       errors.totalCopies = 'Number of copies must be a number'
@@ -901,13 +897,17 @@ export function AdminDashboardPage() {
       return
     }
 
-    const payload = {
-      title,
-      author,
-      category,
-      coverImage,
-      totalCopies,
-      copies: totalCopies,
+    const payload = new FormData()
+    payload.append('title', title)
+    payload.append('author', author)
+    payload.append('category', category)
+    payload.append('totalCopies', String(totalCopies))
+    payload.append('copies', String(totalCopies))
+    if (!bookCoverFile && bookCoverImage) {
+      payload.append('coverImage', bookCoverImage)
+    }
+    if (bookCoverFile) {
+      payload.append('coverImageFile', bookCoverFile)
     }
 
     try {
@@ -926,6 +926,17 @@ export function AdminDashboardPage() {
       setBooksError(e?.response?.data?.message || 'Failed to save book')
     }
   }
+
+  useEffect(() => {
+    if (!bookCoverFile) return undefined
+
+    const objectUrl = URL.createObjectURL(bookCoverFile)
+    setBookCoverImage(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [bookCoverFile])
 
   const handleDeleteBook = async (book) => {
     try {
@@ -1940,22 +1951,25 @@ export function AdminDashboardPage() {
                 <div>
                   <label className="block text-sm font-bold text-dark mb-2">Book Image</label>
                   <input
-                    type="url"
-                    value={bookCoverImage}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
                     onChange={(e) => {
-                      setBookCoverImage(e.target.value)
+                      const nextFile = e.target.files?.[0] || null
+                      setBookCoverFile(nextFile)
+                      if (!nextFile && editingBook?.coverImage) {
+                        setBookCoverImage(editingBook.coverImage)
+                      }
                       if (bookFormErrors.coverImage) {
                         setBookFormErrors((prev) => ({ ...prev, coverImage: undefined }))
                       }
                     }}
-                    placeholder="https://example.com/book-cover.jpg"
                     className={`w-full px-4 py-3 bg-light border rounded-2xl focus:ring-2 focus:ring-teal outline-none ${bookFormErrors.coverImage ? 'border-coral' : 'border-gray-200'}`}
                   />
                   {bookFormErrors.coverImage && (
                     <p className="text-xs text-coral font-semibold mt-1">{bookFormErrors.coverImage}</p>
                   )}
                   <p className="text-xs text-medium mt-1">
-                    Add an image URL to show the book cover on the cards.
+                    Upload a JPG, PNG, or WebP image up to 5MB.
                   </p>
                 </div>
                 <div className="bg-light rounded-2xl p-4">
@@ -1964,7 +1978,7 @@ export function AdminDashboardPage() {
                     <BookCoverImage
                       title={bookTitle || 'Book Preview'}
                       coverColor="bg-golden"
-                      coverImageUrl={bookCoverImage}
+                      coverImageUrl={resolveBookCoverUrl(bookCoverImage)}
                       height="h-32"
                       rounded="rounded-2xl"
                       iconSize={32}

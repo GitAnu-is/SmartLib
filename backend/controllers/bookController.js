@@ -1,4 +1,6 @@
 const asyncHandler = require('express-async-handler');
+const fs = require('fs');
+const path = require('path');
 const Book = require('../models/Book');
 const { logActivity } = require('../utils/activityLogger');
 
@@ -8,6 +10,34 @@ const pickCoverColor = () => {
 };
 
 const normalizeCoverImage = (value) => String(value || '').trim();
+
+const buildCoverImageUrl = (req, filename) => {
+  if (!filename) return '';
+  return `${req.protocol}://${req.get('host')}/uploads/books/${filename}`;
+};
+
+const tryDeleteUploadedCover = (coverImage) => {
+  if (!coverImage || typeof coverImage !== 'string') return;
+
+  let filename = '';
+  try {
+    const parsed = new URL(coverImage);
+    filename = path.basename(parsed.pathname || '');
+  } catch (error) {
+    filename = path.basename(coverImage);
+  }
+
+  if (!filename) return;
+
+  const absPath = path.join(__dirname, '..', 'uploads', 'books', filename);
+  try {
+    if (fs.existsSync(absPath)) {
+      fs.unlinkSync(absPath);
+    }
+  } catch (_) {
+    // best-effort cleanup
+  }
+};
 
 const normalizeStatus = ({ status, copies }) => {
   if (status) return status;
@@ -89,6 +119,10 @@ const createBook = asyncHandler(async (req, res) => {
     throw new Error('copies cannot exceed totalCopies');
   }
 
+  const nextCoverImage = req.file
+    ? buildCoverImageUrl(req, req.file.filename)
+    : normalizeCoverImage(coverImage);
+
   const book = await Book.create({
     title,
     author,
@@ -97,7 +131,7 @@ const createBook = asyncHandler(async (req, res) => {
     totalCopies: parsedTotalCopies,
     copies: parsedCopies,
     coverColor: coverColor || pickCoverColor(),
-    coverImage: normalizeCoverImage(coverImage),
+    coverImage: nextCoverImage,
     rating: rating === undefined ? 0 : Number(rating),
     status: normalizeStatus({ status, copies: parsedCopies }),
     createdBy: req.user?._id,
@@ -143,7 +177,10 @@ const updateBook = asyncHandler(async (req, res) => {
     updates.copies = parsedCopies;
   }
 
-  if (updates.coverImage !== undefined) {
+  if (req.file) {
+    tryDeleteUploadedCover(book.coverImage);
+    updates.coverImage = buildCoverImageUrl(req, req.file.filename);
+  } else if (updates.coverImage !== undefined) {
     updates.coverImage = normalizeCoverImage(updates.coverImage);
   }
 
@@ -183,6 +220,7 @@ const deleteBook = asyncHandler(async (req, res) => {
   }
 
   await book.deleteOne();
+  tryDeleteUploadedCover(book.coverImage);
 
   await logActivity(req, {
     type: 'delete',
