@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { BookOpenIcon } from 'lucide-react'
-import { getOpenLibraryCoverUrl } from '../api/books'
+import { getOpenLibraryCoverUrl, resolveBookCoverUrl } from '../api/books'
 
 const BookCoverImage = ({ title, coverColor = 'bg-teal', coverImageUrl, width = 'w-full', height = 'h-40', rounded = 'rounded-2xl', iconSize = 48, className = '' }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -26,7 +26,7 @@ const BookCoverImage = ({ title, coverColor = 'bg-teal', coverImageUrl, width = 
 
   // Determine which image URL to use
   const imageUrlToTry = coverImageUrl && !tryOpenLibrary 
-    ? coverImageUrl 
+    ? resolveBookCoverUrl(coverImageUrl)
     : getOpenLibraryCoverUrl(title)
 
   return (

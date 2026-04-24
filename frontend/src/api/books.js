@@ -5,6 +5,16 @@ export function getOpenLibraryCoverUrl(title = '') {
   return `https://covers.openlibrary.org/b/title/${query}-L.jpg?default=false`
 }
 
+export function resolveBookCoverUrl(coverImage = '') {
+  const value = String(coverImage || '').trim()
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value) || /^data:image\//i.test(value) || value.startsWith('blob:')) {
+    return value
+  }
+  const backendOrigin = import.meta?.env?.VITE_API_ORIGIN || 'http://localhost:5000'
+  return `${backendOrigin}${value.startsWith('/') ? value : `/${value}`}`
+}
+
 export async function fetchBooks(params = {}) {
   const { data } = await api.get('/books', { params })
   return data
@@ -16,12 +26,18 @@ export async function fetchBookById(bookId) {
 }
 
 export async function createBook(payload) {
-  const { data } = await api.post('/books', payload)
+  const config = payload instanceof FormData
+    ? { headers: { 'Content-Type': 'multipart/form-data' } }
+    : undefined
+  const { data } = await api.post('/books', payload, config)
   return data
 }
 
 export async function updateBook(bookId, payload) {
-  const { data } = await api.put(`/books/${bookId}`, payload)
+  const config = payload instanceof FormData
+    ? { headers: { 'Content-Type': 'multipart/form-data' } }
+    : undefined
+  const { data } = await api.put(`/books/${bookId}`, payload, config)
   return data
 }
 
