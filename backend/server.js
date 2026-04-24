@@ -35,6 +35,7 @@ app.use('/api/spaces', require('./routes/spaceRoutes'));
 app.use('/api/resources', require('./routes/resourceRoutes'));
 app.use('/api/reservations', require('./routes/reservationRoutes'));
 app.use('/api/assistant', require('./routes/assistantRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -26,11 +26,11 @@ import {
   returnBorrowRequest,
 } from '../api/borrowRequests'
 import { createInquiry, fetchMyInquiries } from '../api/inquiries'
-import {
-  fetchMyWaitingList,
+import { fetchMyWaitingList,
   joinWaitingList as apiJoinWaitingList,
   leaveWaitingList as apiLeaveWaitingList,
 } from '../api/waitingList'
+import { PaymentModal } from '../components/PaymentModal'
 
 const BORROW_PERIOD_DAYS = 7
 const FINE_PER_DAY_LKR = 50
@@ -86,6 +86,10 @@ export function SearchBorrowPage({ onNavigate }) {
   const [waitingListError, setWaitingListError] = useState('')
   const [waitingListActionLoading, setWaitingListActionLoading] = useState({})
   const [returnBookActionLoading, setReturnBookActionLoading] = useState({})
+
+  // Payment Modal State
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [selectedFine, setSelectedFine] = useState(null)
 
   const borrowedCount = useMemo(
     () => requests.filter((r) => r.status === 'approved' && !r.returnedAt).length,
@@ -227,6 +231,38 @@ export function SearchBorrowPage({ onNavigate }) {
       })
       .filter(Boolean)
   }, [requests])
+
+  const handleOpenPaymentModal = (fineItem) => {
+    // Find the request that matches this fine
+    const request = requests.find((r) => r.id === fineItem.id)
+    if (!request) return
+
+    setSelectedFine({
+      id: request.id,
+      bookName: fineItem.bookTitle,
+      daysLate: fineItem.daysLate,
+      finePerDay: FINE_PER_DAY_LKR,
+      totalAmount: fineItem.totalFine,
+    })
+    setPaymentModalOpen(true)
+  }
+
+  const handlePaymentSuccess = (paymentInfo) => {
+    if (!selectedFine) return
+
+    // Update the request to mark fine as paid
+    setRequests((prev) =>
+      prev.map((r) =>
+        r.id === selectedFine.id
+          ? { ...r, finePaid: true, finePaidAt: new Date().toISOString() }
+          : r
+      )
+    )
+
+    toast.success(`Payment of Rs ${selectedFine.totalAmount.toFixed(2)} received!`)
+    setPaymentModalOpen(false)
+    setSelectedFine(null)
+  }
 
   const loadMyInquiries = async () => {
     const token = localStorage.getItem('token')
@@ -1076,7 +1112,12 @@ export function SearchBorrowPage({ onNavigate }) {
                             </span>
                           </td>
                           <td className="p-4 text-right">
-                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="px-4 py-2 bg-coral text-white rounded-full text-sm font-bold shadow-lg shadow-coral/30">
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleOpenPaymentModal(fine)}
+                              className="px-4 py-2 bg-coral text-white rounded-full text-sm font-bold shadow-lg shadow-coral/30 hover:bg-coral/90 transition-colors"
+                            >
                               Pay Fine
                             </motion.button>
                           </td>
@@ -1294,6 +1335,17 @@ export function SearchBorrowPage({ onNavigate }) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Payment Modal */}
+        <PaymentModal
+          isOpen={paymentModalOpen}
+          onClose={() => {
+            setPaymentModalOpen(false)
+            setSelectedFine(null)
+          }}
+          fineData={selectedFine}
+          onSuccess={handlePaymentSuccess}
+        />
       </div>
     </div>
   )
