@@ -452,15 +452,15 @@ export function AdminDashboardPage() {
 
   const loadBooks = async () => {
     setBooksError('')
-    setBooksLoading(true)
-    try {
+    setBooksLoading(true)    
+    try {    
       const data = await fetchBooks()
       setBooks(Array.isArray(data) ? data : [])
-    } catch (e) {
+    } catch (e) { 
       setBooksError(e?.response?.data?.message || 'Failed to load books')
-    } finally {
-      setBooksLoading(false)
-    }
+    } finally {   
+      setBooksLoading(false)    
+    }    
   }
 
   useEffect(() => {
