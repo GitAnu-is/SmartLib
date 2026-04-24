@@ -30,6 +30,7 @@ import {
   updateBook as apiUpdateBook,
   deleteBook as apiDeleteBook,
 } from '../api/books'
+import BookCoverImage from '../components/BookCoverImage'
 
 import {
   approveBorrowRequest,
@@ -288,6 +289,7 @@ export function AdminDashboardPage() {
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthor, setBookAuthor] = useState('')
   const [bookCategory, setBookCategory] = useState('Design')
+  const [bookCoverImage, setBookCoverImage] = useState('')
   const [bookTotalCopies, setBookTotalCopies] = useState(1)
   const [bookFormErrors, setBookFormErrors] = useState({})
 
@@ -838,6 +840,7 @@ export function AdminDashboardPage() {
     setBookTitle('')
     setBookAuthor('')
     setBookCategory('Design')
+    setBookCoverImage('')
     setBookTotalCopies(1)
     setBookFormErrors({})
   }
@@ -853,6 +856,7 @@ export function AdminDashboardPage() {
     setBookTitle(book?.title || '')
     setBookAuthor(book?.author || '')
     setBookCategory(book?.category || 'Design')
+    setBookCoverImage(book?.coverImage || '')
     setBookTotalCopies(
       typeof book?.totalCopies === 'number' ? book.totalCopies : 1
     )
@@ -864,6 +868,7 @@ export function AdminDashboardPage() {
     const title = bookTitle.trim()
     const author = bookAuthor.trim()
     const category = String(bookCategory || '').trim()
+    const coverImage = String(bookCoverImage || '').trim()
     const totalCopies = Number(bookTotalCopies)
 
     const errors = {}
@@ -875,6 +880,13 @@ export function AdminDashboardPage() {
     }
     if (author && /[^A-Za-z\s]/.test(author)) {
       errors.author = 'Author cannot contain numbers or symbols'
+    }
+    if (
+      coverImage &&
+      !/^https?:\/\/.+/i.test(coverImage) &&
+      !/^data:image\//i.test(coverImage)
+    ) {
+      errors.coverImage = 'Image must be a valid URL'
     }
     if (Number.isNaN(totalCopies)) {
       errors.totalCopies = 'Number of copies must be a number'
@@ -893,6 +905,7 @@ export function AdminDashboardPage() {
       title,
       author,
       category,
+      coverImage,
       totalCopies,
       copies: totalCopies,
     }
@@ -1906,7 +1919,7 @@ export function AdminDashboardPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl"
+              className="bg-white rounded-3xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
@@ -1924,6 +1937,40 @@ export function AdminDashboardPage() {
                 </button>
               </div>
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-dark mb-2">Book Image</label>
+                  <input
+                    type="url"
+                    value={bookCoverImage}
+                    onChange={(e) => {
+                      setBookCoverImage(e.target.value)
+                      if (bookFormErrors.coverImage) {
+                        setBookFormErrors((prev) => ({ ...prev, coverImage: undefined }))
+                      }
+                    }}
+                    placeholder="https://example.com/book-cover.jpg"
+                    className={`w-full px-4 py-3 bg-light border rounded-2xl focus:ring-2 focus:ring-teal outline-none ${bookFormErrors.coverImage ? 'border-coral' : 'border-gray-200'}`}
+                  />
+                  {bookFormErrors.coverImage && (
+                    <p className="text-xs text-coral font-semibold mt-1">{bookFormErrors.coverImage}</p>
+                  )}
+                  <p className="text-xs text-medium mt-1">
+                    Add an image URL to show the book cover on the cards.
+                  </p>
+                </div>
+                <div className="bg-light rounded-2xl p-4">
+                  <p className="text-sm font-bold text-dark mb-3">Preview</p>
+                  <div className="max-w-[180px]">
+                    <BookCoverImage
+                      title={bookTitle || 'Book Preview'}
+                      coverColor="bg-golden"
+                      coverImageUrl={bookCoverImage}
+                      height="h-32"
+                      rounded="rounded-2xl"
+                      iconSize={32}
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-bold text-dark mb-2">Title</label>
                   <input

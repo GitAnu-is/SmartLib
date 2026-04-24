@@ -1,5 +1,10 @@
 import api from './api'
 
+export function getOpenLibraryCoverUrl(title = '') {
+  const query = encodeURIComponent(String(title || '').trim())
+  return `https://covers.openlibrary.org/b/title/${query}-L.jpg?default=false`
+}
+
 export async function fetchBooks(params = {}) {
   const { data } = await api.get('/books', { params })
   return data
