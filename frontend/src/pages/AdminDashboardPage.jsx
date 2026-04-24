@@ -43,6 +43,7 @@ import { fetchInquiriesAdmin, replyToInquiry } from '../api/inquiries'
 import { fetchActivitiesAdmin } from '../api/activities'
 import { fetchAdminStats } from '../api/admin'
 import { fetchReportCsv } from '../api/reports'
+import { PaymentModal } from '../components/PaymentModal'
 
 const BORROW_PERIOD_DAYS = 7
 const FINE_PER_DAY_LKR = 50
@@ -289,6 +290,11 @@ export function AdminDashboardPage() {
   const [bookCategory, setBookCategory] = useState('Design')
   const [bookTotalCopies, setBookTotalCopies] = useState(1)
   const [bookFormErrors, setBookFormErrors] = useState({})
+
+  // Payment Modal State
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [selectedFine, setSelectedFine] = useState(null)
+  const [finesData, setFinesData] = useState([])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -565,6 +571,35 @@ export function AdminDashboardPage() {
     } finally {
       setReminderActionLoading(item.id, false)
     }
+  }
+
+  const handleOpenPaymentModal = (request) => {
+    if (!request?._id || !request?.book?.title) return
+    setSelectedFine({
+      id: request._id,
+      bookName: request.book.title,
+      daysLate: request.lateDays || 0,
+      finePerDay: FINE_PER_DAY_LKR,
+      totalAmount: request.fineLkr || 0,
+    })
+    setPaymentModalOpen(true)
+  }
+
+  const handlePaymentSuccess = (paymentInfo) => {
+    if (!selectedFine) return
+    
+    // Update the borrow request to mark fine as paid
+    setBorrowRequests((prev) =>
+      prev.map((r) =>
+        r._id === selectedFine.id
+          ? { ...r, finePaid: true, finePaidAt: new Date().toISOString() }
+          : r
+      )
+    )
+    
+    toast.success(`Payment of Rs ${selectedFine.totalAmount.toFixed(2)} received!`)
+    setPaymentModalOpen(false)
+    setSelectedFine(null)
   }
 
   useEffect(() => {
@@ -1117,11 +1152,19 @@ export function AdminDashboardPage() {
                             <tr key={book._id} className="hover:bg-light/50">
                               <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                  <div
-                                    className={`w-10 h-14 ${book.coverColor || 'bg-teal'} rounded-lg flex items-center justify-center`}
-                                  >
-                                    <BookOpenIcon size={16} className="text-white/50" />
-                                  </div>
+                                  {book.coverImage ? (
+                                    <img
+                                      src={book.coverImage}
+                                      alt={book.title}
+                                      className="w-10 h-14 rounded-lg object-cover"
+                                    />
+                                  ) : (
+                                    <div
+                                      className={`w-10 h-14 ${book.coverColor || 'bg-teal'} rounded-lg flex items-center justify-center`}
+                                    >
+                                      <BookOpenIcon size={16} className="text-white/50" />
+                                    </div>
+                                  )}
                                   <div>
                                     <p className="font-bold text-dark">{book.title}</p>
                                     <p className="text-sm text-medium">{book.author}</p>
@@ -1465,12 +1508,13 @@ export function AdminDashboardPage() {
                         <th className="text-center p-4 font-bold text-dark">Days Late</th>
                         <th className="text-center p-4 font-bold text-dark">Fine</th>
                         <th className="text-center p-4 font-bold text-dark">Status</th>
+                        <th className="text-center p-4 font-bold text-dark">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {borrowRequestsLoading && (
                         <tr>
-                          <td className="p-6 text-center text-medium" colSpan={7}>
+                          <td className="p-6 text-center text-medium" colSpan={8}>
                             Loading returned books...
                           </td>
                         </tr>
@@ -1478,7 +1522,7 @@ export function AdminDashboardPage() {
 
                       {!borrowRequestsLoading && borrowRequestsError && (
                         <tr>
-                          <td className="p-6 text-center text-coral font-semibold" colSpan={7}>
+                          <td className="p-6 text-center text-coral font-semibold" colSpan={8}>
                             {borrowRequestsError}
                           </td>
                         </tr>
@@ -1563,6 +1607,18 @@ export function AdminDashboardPage() {
                                     {hasUnpaidFine ? 'Pending Fine' : 'Completed'}
                                   </span>
                                 </td>
+                                <td className="p-4 text-center">
+                                  {hasUnpaidFine ? (
+                                    <button
+                                      onClick={() => handleOpenPaymentModal(request)}
+                                      className="px-4 py-2 bg-coral hover:bg-coral/90 text-white font-bold rounded-lg transition-all text-sm"
+                                    >
+                                      Pay Fine
+                                    </button>
+                                  ) : (
+                                    <span className="text-teal text-sm font-bold">✓ Paid</span>
+                                  )}
+                                </td>
                               </tr>
                             )
                           })}
@@ -1571,7 +1627,7 @@ export function AdminDashboardPage() {
                         borrowRequests.filter((r) => r.returnedAt).length ===
                           0 && (
                           <tr>
-                            <td className="p-6 text-center text-medium" colSpan={7}>
+                            <td className="p-6 text-center text-medium" colSpan={8}>
                               No returned books yet.
                             </td>
                           </tr>
@@ -1579,6 +1635,21 @@ export function AdminDashboardPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Total Unpaid Fines Summary */}
+                {returnedBooksFilter === 'unpaid' && (
+                  <div className="p-6 bg-gradient-to-r from-coral/5 to-red-50 border-t border-gray-100">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-dark text-lg">Total Unpaid Fines:</span>
+                      <span className="text-2xl font-extrabold text-coral">
+                        Rs {borrowRequests
+                          .filter((r) => r.returnedAt && !r.finePaid && (r.fineLkr || 0) > 0)
+                          .reduce((sum, r) => sum + (r.fineLkr || 0), 0)
+                          .toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           )}
@@ -2008,6 +2079,17 @@ export function AdminDashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false)
+          setSelectedFine(null)
+        }}
+        fineData={selectedFine}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   )
 }

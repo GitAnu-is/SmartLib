@@ -32,7 +32,8 @@ import {
 
 import { createSpace, deleteSpace, fetchSpacesAdmin, updateSpace } from '../api/spaces'
 import { deleteResource, fetchResourcesAdmin, updateResource, uploadResource } from '../api/resources'
-  import { cancelReservation, fetchReservationsAdmin } from '../api/reservations'
+import { cancelReservation, fetchReservationsAdmin } from '../api/reservations'
+import AdminSpaceCard from '../components/AdminSpaceCard'
 // --- Mock Data ---
 const mockStats = {
   totalReservations: 1284,
@@ -413,6 +414,18 @@ export function AdminSpacesELearning() {
   const [spaceTimeSlotInput, setSpaceTimeSlotInput] = useState('')
   const [spaceSaving, setSpaceSaving] = useState(false)
   const [editingSpaceId, setEditingSpaceId] = useState(null)
+  const [spaceReservations, setSpaceReservations] = useState([])
+
+  // ===== RESERVATION HANDLERS =====
+  const handleAddReservation = (newReservation) => {
+    setSpaceReservations([...spaceReservations, newReservation])
+    toast.success('Reservation added successfully')
+  }
+
+  const handleSpaceCancelReservation = (reservationId) => {
+    setSpaceReservations(spaceReservations.filter(r => r.id !== reservationId))
+    toast.success('Reservation cancelled')
+  }
 
   const loadSpaces = async () => {
     const token = localStorage.getItem('token')
@@ -1412,85 +1425,15 @@ export function AdminSpacesELearning() {
                   </div>
                 ) : (
                   displaySpaces.map((space) => (
-                  <motion.div
-                    key={space.id}
-                    variants={itemVariants}
-                    className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
-                  >
-                    {/* Colored header bar */}
-                    <div
-                      className={`h-24 ${getSpaceHeaderColor(space.color)} relative flex items-center justify-center`}
-                    >
-                      <MapPinIcon size={32} className="text-white/40" />
-                      <div className="absolute top-3 right-3">
-                        <StatusBadge status={space.status} />
-                      </div>
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                      <h3 className="font-extrabold text-dark text-lg mb-1">
-                        {space.name}
-                      </h3>
-                      <div className="flex items-center gap-3 text-sm text-medium mb-3">
-                        <span className="flex items-center gap-1">
-                          <UsersIcon size={14} /> {space.capacity} seats
-                        </span>
-                        <span>•</span>
-                        <span>{space.type}</span>
-                      </div>
-
-                      {/* Amenities */}
-                      <div className="flex gap-2 mb-3">
-                        {(space.amenities || []).map((amenity) => {
-                          const Icon = amenityIcons[amenity] || WifiIcon
-                          return (
-                            <div
-                              key={amenity}
-                              className="w-8 h-8 bg-light rounded-lg flex items-center justify-center"
-                              title={amenity}
-                            >
-                              <Icon size={14} className="text-medium" />
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {/* Time Slots */}
-                      {(space.timeSlots || []).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {space.timeSlots.map((slot) => (
-                            <span
-                              key={slot}
-                              className="px-2.5 py-1 bg-light rounded-full text-xs font-semibold text-medium"
-                            >
-                              {slot}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
-                        <button className="text-sm font-bold text-teal hover:underline">
-                          View Schedule
-                        </button>
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleEditSpace(space)}
-                            className="p-2 text-medium hover:text-teal hover:bg-teal/10 rounded-full transition-colors"
-                          >
-                            <EditIcon size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSpace(space)}
-                            className="p-2 text-medium hover:text-coral hover:bg-coral/10 rounded-full transition-colors"
-                          >
-                            <TrashIcon size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                    <AdminSpaceCard
+                      key={space.id}
+                      space={space}
+                      reservations={spaceReservations.filter(r => r.spaceId === space.id)}
+                      onEdit={() => handleEditSpace(space)}
+                      onDelete={() => handleDeleteSpace(space)}
+                      onAddReservation={handleAddReservation}
+                      onCancelReservation={handleSpaceCancelReservation}
+                    />
                   ))
                 )}
               </div>
