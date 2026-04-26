@@ -818,9 +818,10 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                     {/* Trend Sparkline */}
                     <div className="mt-3 pt-3 border-t border-gray-50">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-semibold text-gray-500">Risk trend (7 weeks)</span>
-                        <span className={`text-[11px] font-bold ${riskScore > riskTrend[5] ? 'text-rose-500' : 'text-emerald-600'}`}>
-                          {riskScore > riskTrend[5] ? '↑' : '↓'} {Math.abs(riskScore - riskTrend[5])} pts
+                        <span className="text-[11px] font-semibold text-slate-500">Risk trend (7 weeks)</span>
+                        <span className={`flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-md ${riskScore > riskTrend[5] ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`} title="Point change since last week">
+                          {riskScore > riskTrend[5] ? <TrendingUpIcon size={10} /> : <TrendingDownIcon size={10} />}
+                          {Math.abs(riskScore - riskTrend[5])} pts
                         </span>
                       </div>
                       <RiskSparkline data={riskTrend} color={rc.color} />
