@@ -25,6 +25,7 @@ const PayFineModal = ({ isOpen, onClose, fine, onSuccess }) => {
       return v
     }
   }
+  
 
   const formatExpiry = (value) => {
     const v = value.replace(/\D/g, '')
