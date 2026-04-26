@@ -866,15 +866,17 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                 </div>
 
                 {/* ── SMART PICKS ────────────────────────────────── */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-xl bg-amber-50 flex items-center justify-center">
-                        <SparklesIcon size={14} className="text-amber-600" />
+                      <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center border border-amber-100">
+                        <SparklesIcon size={14} className="text-amber-500 animate-pulse" />
                       </div>
-                      <span className="text-sm font-bold text-gray-800">Smart Picks</span>
+                      <span className="text-sm font-bold text-gray-800 tracking-tight">Smart Picks</span>
                     </div>
-                    <span className="text-[11px] font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">{recommendations.length} picks</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${recommendations.length > 0 ? 'bg-teal-50 text-teal-700 border-teal-100' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                      {recommendations.length > 0 ? `Top ${recommendations.length}` : 'Loading'}
+                    </span>
                   </div>
 
                   <div className="space-y-2">
