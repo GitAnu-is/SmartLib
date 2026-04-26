@@ -10,6 +10,7 @@ export async function joinWaitingList(bookId) {
   return data
 }
 
+
 export async function leaveWaitingList(entryId) {
   const { data } = await api.delete(`/waiting-list/${entryId}`)
   return data
