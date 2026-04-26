@@ -787,18 +787,25 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
             {/* ── OVERVIEW PANEL ────────────────────────────────────── */}
             {activePanel === 'overview' && (
               <div className="space-y-4">
-
-                {/* ── RISK ANALYTICS CARD ─────────────────────────── */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+{/* ── RISK ANALYTICS CARD ─────────────────────────── */}
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
                   <div className="px-5 pt-5 pb-3">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-xl ${rc.bg} flex items-center justify-center`}>
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${rc.bg} ${rc.border}`}>
                           <ActivityIcon size={14} className={rc.textColor} />
                         </div>
-                        <span className="text-sm font-bold text-gray-800">Risk Analysis</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-extrabold text-gray-800 tracking-tight">Risk Analysis</span>
+                          <InfoIcon 
+                            size={12} 
+                            className="text-gray-400 hover:text-gray-600 cursor-help transition-colors" 
+                            title="Calculated based on late returns, upcoming due dates, and fine debt" 
+                          />
+                        </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${rc.badge} border ${rc.border}`}>
+                      <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${rc.badge} border ${rc.border}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full bg-current ${riskLevel === 'high' ? 'animate-pulse' : ''}`} />
                         {rc.label}
                       </span>
                     </div>
