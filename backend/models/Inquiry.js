@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const INQUIRY_STATUS = ['pending', 'answered', 'closed'];
 
+
 const inquirySchema = new mongoose.Schema(
   {
     user: {
