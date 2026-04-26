@@ -883,10 +883,11 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                         initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.05 }}
                         onClick={() => book && handleSendMessage(`Tell me about "${book.title}"`)}
-                        className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 cursor-pointer group transition-all border border-transparent hover:border-gray-100">
-                        <div className="w-9 flex-shrink-0 rounded-xl flex items-center justify-center shadow-sm overflow-hidden"
+                        title={book ? `Ask Libby about "${book.title}"` : 'Loading...'}
+                        className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-teal-50/40 cursor-pointer group transition-all border border-transparent hover:border-teal-100/50 active:scale-[0.98]">
+                        <div className="w-9 flex-shrink-0 rounded-xl flex items-center justify-center shadow-sm overflow-hidden relative"
                           style={{ height: '48px', background: `linear-gradient(135deg, ${COVER_GRADIENTS[idx % COVER_GRADIENTS.length][0]}, ${COVER_GRADIENTS[idx % COVER_GRADIENTS.length][1]})` }}>
-                          {book ? <BookOpenIcon size={13} className="text-white/70" /> : <div className="w-5 h-5 bg-white/20 rounded-lg animate-pulse" />}
+                          {book ? <BookOpenIcon size={13} className="text-white/80 group-hover:scale-110 transition-transform duration-300" /> : <div className="w-5 h-5 bg-white/20 rounded-lg animate-pulse" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           {book ? (
