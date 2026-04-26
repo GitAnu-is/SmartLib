@@ -1121,14 +1121,14 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
         </div>
       </div>
 
-      {/* ── Modals ─────────────────────────────────────────────────────── */}
-      <Modal open={showAddBook} onClose={() => setShowAddBook(false)} title="Add New Book">
+      {/* ── Admin Book Management Modals ─────────────────────────────────── */}
+      <Modal open={showAddBook} onClose={() => setShowAddBook(false)} title="Add Library Book">
         <BookForm onSave={handleSaveBook} onCancel={() => setShowAddBook(false)} loading={bookFormLoading} />
       </Modal>
-      <Modal open={!!editBook} onClose={() => setEditBook(null)} title="Edit Book">
+      <Modal open={!!editBook} onClose={() => setEditBook(null)} title="Edit Library Book">
         <BookForm initial={editBook} onSave={handleSaveBook} onCancel={() => setEditBook(null)} loading={bookFormLoading} />
       </Modal>
-      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Delete Book">
+      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Confirm Book Deletion">
         <div className="text-center">
           <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <TrashIcon size={22} className="text-rose-500" />
