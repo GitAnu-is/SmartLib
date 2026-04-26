@@ -1235,24 +1235,6 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                       onChange={e => { inputModeRef.current = 'keyboard'; setInputMessage(e.target.value) }}
                       onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                       placeholder="Ask Libby anything…"
-<<<<<<< HEAD
-                      className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-teal/50 focus:border-teal focus:bg-white outline-none text-sm transition-all" />
-                    {inputMessage && (
-                      <button onClick={() => setInputMessage('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <XIcon size={14} />
-                      </button>
-                    )}
-                  </div>
-                  <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-                    onClick={() => handleSendMessage()} disabled={sending || !inputMessage.trim()}
-                    className="w-11 h-11 bg-coral text-white rounded-2xl flex items-center justify-center shadow-lg shadow-coral/30 disabled:opacity-50 transition-all">
-                    {sending ? <RefreshCwIcon size={18} className="animate-spin" /> : <SendIcon size={18} />}
-                  </motion.button>
-                </div>
-                <p className="text-[10px] text-medium mt-2 text-center">
-                  Libby uses your library data to give accurate answers. Always verify critical info at the library counter.
-=======
                       className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white outline-none text-sm text-gray-800 placeholder:text-gray-400 transition-all" />
                     {inputMessage && (
                       <button onClick={() => setInputMessage('')}
