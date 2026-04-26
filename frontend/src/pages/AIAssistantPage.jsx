@@ -1,64 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-// Commit #30 - 2026-04-26 09:56:25
-
-// Commit #29 - 2026-04-26 09:56:25
-
-// Commit #28 - 2026-04-26 09:56:25
-
-// Commit #27 - 2026-04-26 09:56:25
-
-// Commit #26 - 2026-04-26 09:56:25
-
-// Commit #25 - 2026-04-26 09:56:25
-
-// Commit #24 - 2026-04-26 09:56:25
-
-// Commit #23 - 2026-04-26 09:56:24
-
-// Commit #22 - 2026-04-26 09:56:24
-
-// Commit #21 - 2026-04-26 09:56:24
-
-// Commit #20 - 2026-04-26 09:56:24
-
-// Commit #19 - 2026-04-26 09:56:24
-
-// Commit #18 - 2026-04-26 09:56:24
-
-// Commit #17 - 2026-04-26 09:56:23
-
-// Commit #16 - 2026-04-26 09:56:23
-
-// Commit #15 - 2026-04-26 09:56:23
-
-// Commit #14 - 2026-04-26 09:56:23
-
-// Commit #13 - 2026-04-26 09:56:23
-
-// Commit #12 - 2026-04-26 09:56:23
-
-// Commit #11 - 2026-04-26 09:56:22
-
-// Commit #10 - 2026-04-26 09:56:22
-
-// Commit #9 - 2026-04-26 09:56:22
-
-// Commit #8 - 2026-04-26 09:56:22
-
-// Commit #7 - 2026-04-26 09:56:22
-
-// Commit #6 - 2026-04-26 09:56:22
-
-// Commit #5 - 2026-04-26 09:56:21
-
-// Commit #4 - 2026-04-26 09:56:21
-
-// Commit #3 - 2026-04-26 09:56:21
-
-// Commit #2 - 2026-04-26 09:56:21
-
-// Commit #1 - 2026-04-26 09:56:21
-
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   SendIcon, BotIcon, UserIcon, SparklesIcon, MicIcon,
@@ -1888,18 +1828,17 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                               {req.dueAt && <span className="text-[10px] text-medium">Due: {new Date(req.dueAt).toLocaleDateString()}</span>}
 =======
             {/* ── HISTORY PANEL ────────────────────────────────────── */}
-            {activePanel === 'history' && (
-              <div className="space-y-3">
-                <div className="bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-800">Borrow History</h3>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{myBorrows.length} total requests</p>
-                  </div>
-                  <button onClick={loadBorrows} className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                    <RefreshCwIcon size={12} className={`text-gray-500 ${borrowsLoading ? 'animate-spin' : ''}`} />
-                  </button>
-                </div>
-
+{activePanel === 'history' && (
+  <div className="space-y-3">
+    <div className="bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 flex items-center justify-between">
+      <div>
+        <h3 className="text-sm font-bold text-gray-800">Borrow History</h3>
+        <p className="text-[11px] text-gray-400 mt-0.5">{myBorrows.length} total requests</p>
+      </div>
+      <button onClick={loadBorrows} className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+        <RefreshCwIcon size={12} className={`text-gray-500 ${borrowsLoading ? 'animate-spin' : ''}`} />
+      </button>
+    </div>
                 <div className="space-y-2 max-h-[620px] overflow-y-auto">
                   {borrowsLoading ? Array(4).fill(null).map((_, i) => (
                     <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 animate-pulse">
@@ -2020,32 +1959,3 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
