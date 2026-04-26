@@ -999,11 +999,15 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                           style={{ height: '52px', background: `linear-gradient(135deg, ${COVER_GRADIENTS[idx % COVER_GRADIENTS.length][0]}, ${COVER_GRADIENTS[idx % COVER_GRADIENTS.length][1]})` }}>
                           <BookOpenIcon size={13} className="text-white/70" />
                         </div>
-                        <div className="flex-1 min-w-0">
+                       <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between">
-                            <div className="min-w-0">
-                              <p className="text-[12px] font-semibold text-gray-800 truncate">{book.title}</p>
-                              <p className="text-[10px] text-gray-500 truncate">{book.author}</p>
+                            <div className="min-w-0 pr-2">
+                              <p className="text-[12px] font-semibold text-gray-800 truncate transition-colors" title={book.title}>
+                                {book.title}
+                              </p>
+                              <p className="text-[10px] text-gray-500 truncate mt-0.5" title={book.author}>
+                                {book.author}
+                              </p>
                             </div>
                             <div className="flex items-center gap-0.5 ml-2">
                               <StarIcon size={9} className="text-amber-500 fill-amber-500" />
