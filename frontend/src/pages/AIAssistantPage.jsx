@@ -784,6 +784,7 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
               </div>
             </div>
 
+
             {/* ── OVERVIEW PANEL ────────────────────────────────────── */}
             {activePanel === 'overview' && (
               <div className="space-y-4">
