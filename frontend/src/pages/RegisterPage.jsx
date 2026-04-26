@@ -20,6 +20,7 @@ export function RegisterPage({ onNavigate }) {
             setLoading(false)
             return
         }
+        
 
         try {
             const { data } = await api.post('/auth/register', { fullname, email, password })
