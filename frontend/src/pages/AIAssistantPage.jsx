@@ -1002,7 +1002,7 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                        <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between">
                             <div className="min-w-0 pr-2">
-                              <p className="text-[12px] font-semibold text-gray-800 truncate transition-colors" title={book.title}>
+                              <p className="text-[13px] font-bold text-slate-900 truncate tracking-tight transition-colors" title={book.title}>
                                 {book.title}
                               </p>
                               <p className="text-[10px] text-gray-500 truncate mt-0.5" title={book.author}>
