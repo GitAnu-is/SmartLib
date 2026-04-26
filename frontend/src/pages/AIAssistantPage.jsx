@@ -1217,12 +1217,6 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
               </div>
 
               {/* Messages */}
-<<<<<<< HEAD
-              <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-5 space-y-4" style={{ scrollBehavior: 'smooth' }}>
-                {messages.map(msg => (
-                  <MessageBubble key={msg.id} msg={msg} />
-                ))}
-=======
               <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/30">
                 {messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)}
 >>>>>>> f2062aa (Initial commit: SmartLib project setup)
