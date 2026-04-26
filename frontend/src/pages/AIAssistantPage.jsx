@@ -844,15 +844,17 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                 </div>
 
                 {/* ── READING ANALYTICS ──────────────────────────── */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow duration-300">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-xl bg-violet-50 flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-xl bg-violet-50 flex items-center justify-center border border-violet-100">
                         <BarChart3Icon size={14} className="text-violet-600" />
                       </div>
-                      <span className="text-sm font-bold text-gray-800">Reading Breakdown</span>
+                      <span className="text-sm font-bold text-gray-800 tracking-tight">Reading Breakdown</span>
                     </div>
-                    <span className="text-xs text-gray-400">{categoryStats.reduce((a, c) => a + (c.count || 0), 0)} books total</span>
+                    <span className="text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-md border border-violet-100">
+                      {categoryStats.reduce((a, c) => a + (c.count || 0), 0)} books total
+                    </span>
                   </div>
 
                   {categoryStats.length === 0 ? (
