@@ -21,7 +21,7 @@ export function RegisterPage({ onNavigate }) {
             return
         }
         
-
+        
         try {
             const { data } = await api.post('/auth/register', { fullname, email, password })
             localStorage.setItem('token', data.token)
