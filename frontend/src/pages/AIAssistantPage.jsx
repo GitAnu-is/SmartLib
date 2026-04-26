@@ -1054,9 +1054,14 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
             {activePanel === 'history' && (
               <div className="space-y-3">
                 <div className="bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-800">Borrow History</h3>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{myBorrows.length} total requests</p>
+                 <div className="flex flex-col">
+                    <h3 className="text-[13px] font-extrabold text-gray-800 tracking-tight">Your Borrow History</h3>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[11px] font-medium text-gray-500">Total requests:</span>
+                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded-md">
+                        {myBorrows.length}
+                      </span>
+                    </div>
                   </div>
                   <button onClick={loadBorrows} className="w-8 h-8 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
                     <RefreshCwIcon size={12} className={`text-gray-500 ${borrowsLoading ? 'animate-spin' : ''}`} />
