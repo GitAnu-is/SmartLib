@@ -28,6 +28,7 @@ export function LoginPage({ onNavigate }) {
             setLoading(false)
         }
     }
+    
 
     return (
         <div className="min-h-[calc(100vh-80px)] bg-light flex items-center justify-center p-4 sm:p-8">
