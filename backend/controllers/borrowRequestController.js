@@ -8,6 +8,7 @@ const { sendMail } = require('../utils/mailer');
 const BORROW_PERIOD_DAYS = 7;
 const FINE_PER_DAY_LKR = 50;
 
+
 function startOfDay(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
