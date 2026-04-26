@@ -953,11 +953,20 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
               <div className="space-y-3">
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 relative">
-                      <SearchIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="flex-1 relative group">
+                      <SearchIcon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-500 transition-colors" />
                       <input value={bookSearch} onChange={e => setBookSearch(e.target.value)}
                         placeholder="Search books, authors…"
-                        className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 placeholder:text-gray-400 transition-all" />
+                        className="w-full pl-8 pr-9 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 focus:bg-white placeholder:text-gray-400 transition-all" />
+                      {bookSearch && (
+                        <button 
+                          onClick={() => setBookSearch('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                          title="Clear search"
+                        >
+                          <XIcon size={13} />
+                        </button>
+                      )}
                     </div>
                     {isAdmin && (
                       <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
