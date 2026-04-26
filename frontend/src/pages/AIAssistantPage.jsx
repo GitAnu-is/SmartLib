@@ -1063,10 +1063,14 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                   </button>
                 </div>
 
-                <div className="space-y-2 max-h-[620px] overflow-y-auto">
-                  {borrowsLoading ? Array(4).fill(null).map((_, i) => (
-                    <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 animate-pulse">
-                      <div className="h-3 bg-gray-200 rounded w-2/3 mb-2" /><div className="h-2.5 bg-gray-200 rounded w-1/3" />
+                <div className="space-y-2 max-h-[620px] overflow-y-auto pr-1">
+                  {borrowsLoading ? Array(5).fill(null).map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl p-3.5 border border-gray-100 animate-pulse flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-xl bg-gray-100 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="h-3 bg-gray-200 rounded-full w-2/3 mb-2" />
+                        <div className="h-2.5 bg-gray-100 rounded-full w-1/3" />
+                      </div>
                     </div>
                   )) : myBorrows.length === 0 ? (
                     <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
