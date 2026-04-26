@@ -803,10 +803,10 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                       </span>
                     </div>
 
-                    {/* Chart + Stats */}
-                    <div className="space-y-3">
+                   {/* Chart + Stats */}
+                    <div className="space-y-4">
                       <RiskScoreChart score={riskScore} level={riskLevel} />
-                      <div className="space-y-2.5">
+                      <div className="space-y-3 bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100">
                         <RiskFactor label="Overall Score" value={riskScore} max={100}
                           color={riskLevel === 'low' ? 'low' : riskLevel === 'medium' ? 'medium' : 'high'} />
                         <RiskFactor label="Past Late" value={insights?.risk?.pastLateReturns ?? 0} max={10} color="medium" />
