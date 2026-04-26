@@ -918,27 +918,37 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                   </div>
                 </div>
 
-                {/* ── FINE RECORDS ──────────────────────────────── */}
+              {/* ── FINE RECORDS ──────────────────────────────── */}
                 {fineRecords.length > 0 && (
                   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center">
-                        <DollarSignIcon size={14} className="text-rose-500" />
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center">
+                          <DollarSignIcon size={14} className="text-rose-500" />
+                        </div>
+                        <span className="text-sm font-bold text-gray-800">Fine Records</span>
                       </div>
-                      <span className="text-sm font-bold text-gray-800">Fine Records</span>
+                      <span className="text-[10px] font-semibold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                        {fineRecords.length} records
+                      </span>
                     </div>
                     <div className="space-y-2">
                       {fineRecords.map((fine) => (
-                        <div key={fine.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                          <div className="min-w-0">
-                            <p className="text-[12px] font-semibold text-gray-800 truncate">{fine.book}</p>
-                            <p className="text-[10px] text-gray-400">{fine.date}</p>
+                        <div key={fine.id} 
+                          className={`flex items-center justify-between p-3 rounded-xl border hover:shadow-sm transition-all ${
+                            fine.status === 'paid' ? 'bg-gray-50 border-gray-100' : 'bg-rose-50/40 border-rose-100'
+                          }`}>
+                          <div className="min-w-0 pr-3">
+                            <p className="text-[12px] font-semibold text-gray-800 truncate" title={fine.book}>{fine.book}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{fine.date}</p>
                           </div>
-                          <div className="text-right ml-3">
-                            <p className="text-[12px] font-bold text-gray-800">{formatLkr(fine.amountLkr)}</p>
+                          <div className="text-right flex-shrink-0">
+                            <p className={`text-[12px] font-bold ${fine.status === 'paid' ? 'text-gray-800' : 'text-rose-600'}`}>
+                              {formatLkr(fine.amountLkr)}
+                            </p>
                             {fine.status === 'paid'
-                              ? <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 justify-end"><CheckCircleIcon size={9} /> Paid</span>
-                              : <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-0.5 justify-end"><XCircleIcon size={9} /> Unpaid</span>}
+                              ? <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 justify-end mt-0.5"><CheckCircleIcon size={9} /> Paid</span>
+                              : <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-0.5 justify-end mt-0.5"><XCircleIcon size={9} /> Unpaid</span>}
                           </div>
                         </div>
                       ))}
