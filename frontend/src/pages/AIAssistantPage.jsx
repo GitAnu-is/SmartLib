@@ -966,9 +966,14 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                         <PlusIcon size={12} /> Add
                       </motion.button>
                     )}
-                    <button onClick={loadBooks} className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
-                      <RefreshCwIcon size={12} className={`text-gray-500 ${booksLoading ? 'animate-spin' : ''}`} />
-                    </button>
+                   <button 
+  onClick={loadBooks} 
+  disabled={booksLoading}
+  title="Refresh book list"
+  className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <RefreshCwIcon size={12} className={`text-gray-500 ${booksLoading ? 'animate-spin' : ''}`} />
+</button>
                   </div>
                   {bookError && (
                     <div className="flex items-center gap-2 p-2.5 bg-rose-50 rounded-xl mt-3 text-xs text-rose-600 border border-rose-100">
