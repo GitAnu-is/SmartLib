@@ -828,16 +828,16 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                   </div>
 
                   {/* Stat Grid */}
-                  <div className="grid grid-cols-3 border-t border-gray-100">
+                  <div className="grid grid-cols-3 border-t border-gray-100 rounded-b-3xl overflow-hidden">
                     {[
-                      { label: 'Fine', value: formatLkr(insights?.risk?.currentOverdueFineLkr), icon: '💰', color: 'text-rose-600' },
-                      { label: 'Due Soon', value: `${insights?.risk?.dueSoonCount ?? 0} books`, icon: '📅', color: 'text-amber-600' },
-                      { label: 'Late History', value: `${insights?.risk?.pastLateReturns ?? 0} times`, icon: '⏰', color: 'text-gray-700' },
+                      { label: 'Fine', value: formatLkr(insights?.risk?.currentOverdueFineLkr), Icon: DollarSignIcon, color: 'text-rose-600', iconColor: 'text-rose-400' },
+                      { label: 'Due Soon', value: `${insights?.risk?.dueSoonCount ?? 0} books`, Icon: CalendarIcon, color: 'text-amber-600', iconColor: 'text-amber-400' },
+                      { label: 'Late History', value: `${insights?.risk?.pastLateReturns ?? 0} times`, Icon: ClockIcon, color: 'text-slate-700', iconColor: 'text-slate-400' },
                     ].map((s, i) => (
-                      <div key={i} className={`p-3.5 text-center ${i < 2 ? 'border-r border-gray-100' : ''}`}>
-                        <p className="text-base mb-1">{s.icon}</p>
-                        <p className={`text-xs font-bold ${s.color}`}>{s.value}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{s.label}</p>
+                      <div key={i} className={`p-3.5 text-center transition-colors hover:bg-slate-50 cursor-default ${i < 2 ? 'border-r border-gray-100' : ''}`}>
+                        <div className="flex justify-center mb-1.5"><s.Icon size={16} className={s.iconColor} /></div>
+                        <p className={`text-[13px] font-bold tracking-tight ${s.color}`}>{s.value}</p>
+                        <p className="text-[10px] text-gray-500 font-medium mt-0.5">{s.label}</p>
                       </div>
                     ))}
                   </div>
