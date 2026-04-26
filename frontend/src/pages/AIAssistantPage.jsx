@@ -1031,7 +1031,9 @@ export function AIAssistantPage({ onNavigate: _onNavigate }) {
                               {isAdmin && (
                                 <>
                                   <button onClick={() => setEditBook(book)}
-                                    className="w-6 h-6 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors">
+                                    title="Edit Book Details"
+                                    aria-label={`Edit ${book.title}`}
+                                    className="w-6 h-6 rounded-lg bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 flex items-center justify-center transition-all">
                                     <EditIcon size={10} className="text-blue-600" />
                                   </button>
                                   <button onClick={() => setDeleteConfirm(book)}
